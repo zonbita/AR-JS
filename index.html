@@ -3,524 +3,515 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR GLB Model Viewer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-    
-    <!-- Fallback scripts cho XAMPP -->
-    <script>
-        // Kiểm tra nếu đang chạy trên localhost/XAMPP
-        if (location.protocol === 'http:' && location.hostname === 'localhost') {
-            console.log('Đang chạy trên XAMPP localhost');
-        }
-        
-        // Fallback nếu không load được AR.js
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                if (typeof AFRAME === 'undefined') {
-                    document.body.innerHTML = `
-                        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                                   background: #ff4444; color: white; padding: 20px; border-radius: 10px; 
-                                   text-align: center; z-index: 9999; max-width: 80%;">
-                            <h3>❌ Lỗi tải thư viện</h3>
-                            <p>Vui lòng kiểm tra kết nối internet và thử lại</p>
-                            <button onclick="location.reload()" style="background: white; color: #ff4444; 
-                                   border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                                🔄 Thử lại
-                            </button>
-                        </div>
-                    `;
-                }
-            }, 5000);
-        });
-    </script>
+    <title>3D Model Viewer - XAMPP Offline</title>
     <style>
-        body {
+        * {
             margin: 0;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            background: #000;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        #arjsDebugUIContainer {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 999;
-            background: rgba(0,0,0,0.7);
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: white;
+        }
+        
+        .header {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 300;
+            margin: 0;
+        }
+        
+        .subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: calc(100vh - 120px);
+            justify-content: center;
+        }
+        
+        .viewer-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .canvas-area {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .model-3d {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            transform-style: preserve-3d;
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        .cube {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            transform-style: preserve-3d;
+            animation: rotate3d 12s linear infinite;
+            left: 50%;
+            top: 50%;
+            margin: -50px 0 0 -50px;
+        }
+        
+        .cube-face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.8);
+            border: 2px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .front { transform: rotateY(0deg) translateZ(50px); }
+        .back { transform: rotateY(180deg) translateZ(50px); }
+        .right { transform: rotateY(90deg) translateZ(50px); }
+        .left { transform: rotateY(-90deg) translateZ(50px); }
+        .top { transform: rotateX(90deg) translateZ(50px); }
+        .bottom { transform: rotateX(-90deg) translateZ(50px); }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotateX(0deg); }
+            50% { transform: translateY(-20px) rotateX(5deg); }
+        }
+        
+        @keyframes rotate3d {
+            0% { transform: translateX(-50px) translateY(-50px) rotateX(0deg) rotateY(0deg); }
+            25% { transform: translateX(-50px) translateY(-50px) rotateX(90deg) rotateY(90deg); }
+            50% { transform: translateX(-50px) translateY(-50px) rotateX(180deg) rotateY(180deg); }
+            75% { transform: translateX(-50px) translateY(-50px) rotateX(270deg) rotateY(270deg); }
+            100% { transform: translateX(-50px) translateY(-50px) rotateX(360deg) rotateY(360deg); }
+        }
+        
+        .model-info {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
             border-radius: 10px;
-            padding: 10px;
+            margin: 15px 0;
+            font-size: 14px;
         }
         
         .controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
             display: flex;
             gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
         }
         
         .control-btn {
-            background: rgba(255,255,255,0.9);
+            background: linear-gradient(45deg, #667eea, #764ba2);
             border: none;
-            border-radius: 50px;
-            padding: 15px 20px;
-            font-size: 14px;
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: white;
             font-weight: bold;
-            color: #333;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
         }
         
         .control-btn:hover {
-            background: white;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #764ba2, #667eea);
         }
         
         .control-btn:active {
             transform: translateY(0);
         }
         
-        .info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            max-width: 250px;
-            z-index: 1000;
-            font-size: 12px;
-            line-height: 1.4;
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+            max-width: 800px;
         }
         
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
+        .feature-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
             padding: 20px;
-            border-radius: 10px;
-            z-index: 1001;
+            border: 1px solid rgba(255,255,255,0.2);
             text-align: center;
-            max-width: 80%;
+            transition: transform 0.3s ease;
         }
         
-        .xampp-notice {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: #ff9800;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            z-index: 1002;
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .feature-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .feature-desc {
             font-size: 12px;
-            display: none;
+            opacity: 0.8;
         }
         
-        .spinner {
-            border: 3px solid #333;
-            border-top: 3px solid #fff;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 10px auto;
+        .footer {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            text-align: center;
+            margin-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            animation: slideIn 0.5s ease forwards;
         }
         
-        .error {
-            background: rgba(255,0,0,0.8);
+        .notification.success { background: linear-gradient(45deg, #4CAF50, #45a049); }
+        .notification.info { background: linear-gradient(45deg, #2196F3, #1976D2); }
+        .notification.warning { background: linear-gradient(45deg, #FF9800, #F57C00); }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
         }
         
-        @media (max-width: 480px) {
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 10px;
+            }
+            
+            .viewer-container {
+                padding: 20px;
+            }
+            
+            .canvas-area {
+                height: 250px;
+            }
+            
+            .cube {
+                width: 80px;
+                height: 80px;
+                margin: -40px 0 0 -40px;
+            }
+            
+            .cube-face {
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
+            
+            .front, .back { transform: rotateY(0deg) translateZ(40px); }
+            .back { transform: rotateY(180deg) translateZ(40px); }
+            .right { transform: rotateY(90deg) translateZ(40px); }
+            .left { transform: rotateY(-90deg) translateZ(40px); }
+            .top { transform: rotateX(90deg) translateZ(40px); }
+            .bottom { transform: rotateX(-90deg) translateZ(40px); }
+            
             .controls {
-                bottom: 10px;
-                flex-wrap: wrap;
-                max-width: 90%;
+                gap: 8px;
             }
             
             .control-btn {
-                padding: 12px 16px;
+                padding: 10px 16px;
                 font-size: 12px;
                 flex: 1;
-                min-width: 100px;
-            }
-            
-            .info {
-                top: 60px;
-                right: 10px;
-                max-width: 200px;
-                font-size: 11px;
+                min-width: 80px;
             }
         }
     </style>
 </head>
 <body>
-    <div id="xampp-notice" class="xampp-notice">
-        ⚠️ Đang chạy trên localhost - Một số tính năng AR có thể bị hạn chế. Để có trải nghiệm tốt nhất, hãy deploy lên HTTPS server.
-        <button onclick="this.parentElement.style.display='none'" style="background: none; border: 1px solid white; color: white; margin-left: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer;">✕</button>
+    <div class="header">
+        <h1>🎮 3D Model Viewer</h1>
+        <div class="subtitle">XAMPP Offline Version - Không cần Internet</div>
     </div>
     
-    <div id="loading" class="loading">
-        <div class="spinner"></div>
-        <div>Đang khởi tạo AR...</div>
-        <div style="font-size: 11px; margin-top: 10px; opacity: 0.8;">
-            Nếu bị kẹt, vui lòng kiểm tra kết nối internet
+    <div class="main-container">
+        <div class="viewer-container">
+            <h2>🦆 Demo Model</h2>
+            
+            <div class="canvas-area" id="canvas-area">
+                <div class="model-3d">
+                    <div class="cube" id="cube">
+                        <div class="cube-face front">🦆</div>
+                        <div class="cube-face back">📦</div>
+                        <div class="cube-face right">🎮</div>
+                        <div class="cube-face left">🚀</div>
+                        <div class="cube-face top">⭐</div>
+                        <div class="cube-face bottom">💎</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="model-info">
+                <strong>📋 Thông tin Model:</strong><br>
+                Tên: <span id="model-name">Animated Cube</span><br>
+                Kích thước: <span id="model-scale">1.0x</span><br>
+                Góc xoay: <span id="model-rotation">0°</span>
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn" onclick="rotateModel()">🔄 Xoay</button>
+                <button class="control-btn" onclick="scaleModel()">📏 Zoom</button>
+                <button class="control-btn" onclick="changeColor()">🎨 Màu</button>
+                <button class="control-btn" onclick="changeModel()">🔄 Model</button>
+                <button class="control-btn" onclick="resetModel()">⚡ Reset</button>
+            </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">Offline Ready</div>
+                <div class="feature-desc">Hoạt động hoàn toàn offline trên XAMPP</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">Responsive</div>
+                <div class="feature-desc">Tương thích mọi thiết bị mobile & desktop</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Fast Loading</div>
+                <div class="feature-desc">Tải nhanh, không cần thư viện external</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎮</div>
+                <div class="feature-title">Interactive</div>
+                <div class="feature-desc">Điều khiển mô hình với các nút bấm</div>
+            </div>
         </div>
     </div>
     
-    <div class="info">
-        <strong>🎯 Hướng dẫn sử dụng AR:</strong><br>
-        1. Cho phép truy cập camera<br>
-        2. Hướng camera về marker Hiro<br>
-        3. Mô hình 3D sẽ hiển thị trên marker<br>
-        4. Dùng các nút điều khiển bên dưới
-    </div>
-
-    <a-scene
-        vr-mode-ui="enabled: false"
-        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-        embedded
-        gesture-detector
-        id="scene">
-
-        <a-assets timeout="10000">
-            <!-- Sử dụng local models nếu có thể -->
-            <a-asset-item 
-                id="duck-model" 
-                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb"
-                crossorigin="anonymous">
-            </a-asset-item>
-            
-            <!-- Backup model -->
-            <a-asset-item 
-                id="box-model" 
-                src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb"
-                crossorigin="anonymous">
-            </a-asset-item>
-            
-            <!-- Local fallback - tạo basic geometry nếu không load được GLB -->
-            <a-mixin id="fallback-box" 
-                     geometry="primitive: box; width: 1; height: 1; depth: 1" 
-                     material="color: #4CC3D9">
-            </a-mixin>
-        </a-assets>
-
-        <a-marker 
-            preset="hiro" 
-            raycaster="objects: .clickable" 
-            emitevents="true" 
-            cursor="fuse: false; rayOrigin: mouse;"
-            id="markerA">
-            
-            <!-- Main GLB model -->
-            <a-gltf-model 
-                id="main-model"
-                src="#duck-model" 
-                position="0 0 0" 
-                scale="0.5 0.5 0.5"
-                rotation="0 0 0"
-                animation-mixer="clip: *; loop: repeat"
-                class="clickable"
-                gesture-handler="minScale: 0.25; maxScale: 10">
-            </a-gltf-model>
-            
-            <!-- Lighting -->
-            <a-light 
-                type="ambient" 
-                color="#404040" 
-                intensity="0.4">
-            </a-light>
-            
-            <a-light 
-                type="directional" 
-                position="0 3 1" 
-                color="#ffffff" 
-                intensity="0.6"
-                cast-shadow="true">
-            </a-light>
-            
-            <!-- Ground plane for shadows -->
-            <a-plane 
-                position="0 -0.1 0" 
-                rotation="-90 0 0" 
-                width="4" 
-                height="4" 
-                color="#7BC8A4" 
-                opacity="0.3"
-                receive-shadow="true">
-            </a-plane>
-        </a-marker>
-
-        <a-entity camera></a-entity>
-    </a-scene>
-
-    <div class="controls">
-        <button class="control-btn" onclick="rotateModel()">🔄 Xoay</button>
-        <button class="control-btn" onclick="scaleModel()">📏 Phóng to</button>
-        <button class="control-btn" onclick="resetModel()">🔄 Reset</button>
-        <button class="control-btn" onclick="changeModel()">🔄 Đổi Model</button>
+    <div class="footer">
+        <p>🚀 <strong>XAMPP 3D Model Viewer</strong> - Phiên bản demo offline</p>
+        <p style="font-size: 12px; opacity: 0.8; margin-top: 5px;">
+            Để sử dụng AR thực, cần deploy lên HTTPS server và sử dụng AR.js
+        </p>
     </div>
 
     <script>
         let currentRotation = 0;
-        let currentScale = 0.5;
+        let currentScale = 1.0;
+        let currentColorIndex = 0;
         let currentModelIndex = 0;
-        let isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-        const models = ['#duck-model', '#box-model'];
-        const modelNames = ['Duck', 'Box'];
-
-        // Hiển thị thông báo XAMPP nếu cần
-        if (isLocalhost && location.protocol === 'http:') {
-            document.getElementById('xampp-notice').style.display = 'block';
-        }
-
-        // Hide loading when AR is ready - tăng timeout cho XAMPP
-        document.querySelector('a-scene').addEventListener('loaded', function () {
-            setTimeout(() => {
-                document.getElementById('loading').style.display = 'none';
-            }, isLocalhost ? 5000 : 2000);
-        });
-
-        // Xử lý lỗi đặc biệt cho localhost
-        window.addEventListener('error', function(e) {
-            if (e.message.includes('getUserMedia') || e.message.includes('camera')) {
-                showNotification('⚠️ Lỗi camera - Cần HTTPS để truy cập camera trên mobile', 'error');
-            }
-        });
-
-        // Error handling
-        document.querySelector('a-scene').addEventListener('arjs-video-loaded', function() {
-            console.log('AR Video loaded successfully');
-        });
-
-        // Model loading events với fallback
-        document.getElementById('main-model').addEventListener('model-loaded', function() {
-            console.log('GLB model loaded successfully');
-            showNotification('✅ Mô hình đã tải thành công!', 'success');
-        });
-
-        document.getElementById('main-model').addEventListener('model-error', function() {
-            console.log('Error loading GLB model, trying backup...');
-            // Thử model backup trước
-            if (currentModelIndex === 0) {
-                document.getElementById('main-model').setAttribute('src', '#box-model');
-                showNotification('⚠️ Đang tải mô hình dự phòng...', 'warning');
-            } else {
-                // Nếu vẫn lỗi, tạo fallback geometry
-                createFallbackModel();
-            }
+        
+        const colors = [
+            'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4)',
+            'linear-gradient(45deg, #667eea, #764ba2)',
+            'linear-gradient(45deg, #f093fb, #f5576c)',
+            'linear-gradient(45deg, #4facfe, #00f2fe)',
+            'linear-gradient(45deg, #43e97b, #38f9d7)'
+        ];
+        
+        const models = [
+            { name: 'Animated Cube', icons: ['🦆', '📦', '🎮', '🚀', '⭐', '💎'] },
+            { name: 'Emoji Box', icons: ['😀', '😎', '🤖', '🎨', '🎵', '🌟'] },
+            { name: 'Nature Cube', icons: ['🌳', '🌊', '🔥', '🌙', '☀️', '🌍'] },
+            { name: 'Animal Box', icons: ['🐱', '🐶', '🦊', '🐯', '🦁', '🐼'] }
+        ];
+        
+        // Khởi tạo
+        window.addEventListener('load', function() {
+            showNotification('🎮 3D Model Viewer đã sẵn sàng!', 'success');
+            updateModelInfo();
         });
         
-        function createFallbackModel() {
-            const model = document.getElementById('main-model');
-            const parent = model.parentElement;
-            
-            // Tạo box đơn giản thay thế
-            const fallbackBox = document.createElement('a-box');
-            fallbackBox.setAttribute('id', 'fallback-model');
-            fallbackBox.setAttribute('position', '0 0.5 0');
-            fallbackBox.setAttribute('scale', '0.5 0.5 0.5');
-            fallbackBox.setAttribute('color', '#4CC3D9');
-            fallbackBox.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 10000');
-            
-            parent.replaceChild(fallbackBox, model);
-            showNotification('📦 Sử dụng mô hình dự phóng', 'info');
-        }
-
-        // Marker detection events
-        document.querySelector('#markerA').addEventListener('markerFound', function() {
-            console.log('Marker detected');
-            showNotification('🎯 Đã tìm thấy marker!', 'success');
-        });
-
-        document.querySelector('#markerA').addEventListener('markerLost', function() {
-            console.log('Marker lost');
-            showNotification('❌ Đã mất marker', 'error');
-        });
-
-        // Control functions
         function rotateModel() {
             currentRotation += 45;
-            const model = document.getElementById('main-model');
-            model.setAttribute('rotation', `0 ${currentRotation} 0`);
-            showNotification(`🔄 Xoay ${currentRotation}°`, 'info');
+            const cube = document.getElementById('cube');
+            cube.style.transform = `translateX(-50px) translateY(-50px) rotateX(${currentRotation}deg) rotateY(${currentRotation}deg)`;
+            updateModelInfo();
+            showNotification(`🔄 Xoay ${currentRotation % 360}°`, 'info');
         }
-
+        
         function scaleModel() {
-            currentScale = currentScale >= 2 ? 0.25 : currentScale + 0.25;
-            const model = document.getElementById('main-model');
-            model.setAttribute('scale', `${currentScale} ${currentScale} ${currentScale}`);
+            currentScale = currentScale >= 2 ? 0.5 : currentScale + 0.25;
+            const cube = document.getElementById('cube');
+            cube.style.transform += ` scale(${currentScale})`;
+            updateModelInfo();
             showNotification(`📏 Tỷ lệ: ${currentScale}x`, 'info');
         }
-
-        function resetModel() {
-            currentRotation = 0;
-            currentScale = 0.5;
-            const model = document.getElementById('main-model');
-            model.setAttribute('rotation', '0 0 0');
-            model.setAttribute('scale', '0.5 0.5 0.5');
-            model.setAttribute('position', '0 0 0');
-            showNotification('🔄 Đã reset mô hình', 'success');
+        
+        function changeColor() {
+            currentColorIndex = (currentColorIndex + 1) % colors.length;
+            const canvasArea = document.getElementById('canvas-area');
+            canvasArea.style.background = colors[currentColorIndex];
+            canvasArea.style.backgroundSize = '400% 400%';
+            showNotification(`🎨 Đã đổi màu nền`, 'info');
         }
-
+        
         function changeModel() {
             currentModelIndex = (currentModelIndex + 1) % models.length;
-            const model = document.getElementById('main-model');
-            model.setAttribute('src', models[currentModelIndex]);
-            showNotification(`🔄 Đổi sang: ${modelNames[currentModelIndex]}`, 'info');
-            resetModel();
+            const currentModel = models[currentModelIndex];
+            const faces = document.querySelectorAll('.cube-face');
+            
+            faces.forEach((face, index) => {
+                face.textContent = currentModel.icons[index];
+            });
+            
+            document.getElementById('model-name').textContent = currentModel.name;
+            showNotification(`🔄 Chuyển sang: ${currentModel.name}`, 'success');
         }
-
-        // Notification system
+        
+        function resetModel() {
+            currentRotation = 0;
+            currentScale = 1.0;
+            currentColorIndex = 0;
+            currentModelIndex = 0;
+            
+            const cube = document.getElementById('cube');
+            const canvasArea = document.getElementById('canvas-area');
+            
+            cube.style.transform = 'translateX(-50px) translateY(-50px) rotateX(0deg) rotateY(0deg) scale(1)';
+            canvasArea.style.background = colors[0];
+            
+            // Reset model
+            const faces = document.querySelectorAll('.cube-face');
+            const defaultIcons = models[0].icons;
+            faces.forEach((face, index) => {
+                face.textContent = defaultIcons[index];
+            });
+            
+            updateModelInfo();
+            showNotification('⚡ Đã reset tất cả!', 'success');
+        }
+        
+        function updateModelInfo() {
+            document.getElementById('model-name').textContent = models[currentModelIndex].name;
+            document.getElementById('model-scale').textContent = currentScale + 'x';
+            document.getElementById('model-rotation').textContent = (currentRotation % 360) + '°';
+        }
+        
         function showNotification(message, type = 'info') {
-            // Remove existing notifications
+            // Xóa notification cũ
             const existing = document.querySelector('.notification');
-            if (existing) {
-                existing.remove();
-            }
-
+            if (existing) existing.remove();
+            
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            notification.style.cssText = `
-                position: fixed;
-                top: 70px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: ${getNotificationColor(type)};
-                color: white;
-                padding: 10px 20px;
-                border-radius: 25px;
-                z-index: 1002;
-                font-weight: bold;
-                font-size: 14px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                animation: slideIn 0.3s ease;
-            `;
             notification.textContent = message;
-
+            
             document.body.appendChild(notification);
-
+            
             setTimeout(() => {
                 if (notification.parentNode) {
-                    notification.style.animation = 'slideOut 0.3s ease';
-                    setTimeout(() => notification.remove(), 300);
+                    notification.style.animation = 'slideIn 0.5s ease reverse';
+                    setTimeout(() => notification.remove(), 500);
                 }
             }, 3000);
         }
-
-        function getNotificationColor(type) {
-            switch(type) {
-                case 'success': return 'rgba(76, 175, 80, 0.9)';
-                case 'error': return 'rgba(244, 67, 54, 0.9)';
-                case 'warning': return 'rgba(255, 152, 0, 0.9)';
-                default: return 'rgba(33, 150, 243, 0.9)';
-            }
-        }
-
-        // Add CSS animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    opacity: 0;
-                    transform: translateX(-50%) translateY(-20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(-50%) translateY(0);
-                }
-            }
-            @keyframes slideOut {
-                from {
-                    opacity: 1;
-                    transform: translateX(-50%) translateY(0);
-                }
-                to {
-                    opacity: 0;
-                    transform: translateX(-50%) translateY(-20px);
-                }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Touch gestures for mobile
-        AFRAME.registerComponent('gesture-handler', {
-            schema: {
-                enabled: { default: true },
-                rotationFactor: { default: 5 },
-                minScale: { default: 0.3 },
-                maxScale: { default: 8 },
-            },
-
-            init: function () {
-                this.handleScale = this.handleScale.bind(this);
-                this.handleRotation = this.handleRotation.bind(this);
-
-                this.isVisible = false;
-                this.initialScale = this.el.object3D.scale.clone();
-                this.scaleFactor = 1;
-
-                this.el.sceneEl.addEventListener('markerFound', (e) => {
-                    this.isVisible = true;
-                });
-
-                this.el.sceneEl.addEventListener('markerLost', (e) => {
-                    this.isVisible = false;
-                });
-            },
-
-            listeners: {
-                onefingermove: function (event) {
-                    if (this.isVisible) {
-                        this.handleRotation(event);
-                    }
-                },
-
-                twofingermove: function (event) {
-                    if (this.isVisible) {
-                        this.handleScale(event);
-                    }
-                }
-            },
-
-            handleRotation: function (event) {
-                if (this.data.enabled) {
-                    this.el.object3D.rotation.y += event.detail.positionChange.x * this.data.rotationFactor;
-                    this.el.object3D.rotation.x += event.detail.positionChange.y * this.data.rotationFactor;
-                }
-            },
-
-            handleScale: function (event) {
-                if (this.data.enabled) {
-                    this.scaleFactor *= 1 + event.detail.spreadChange / event.detail.startSpread;
-
-                    this.scaleFactor = Math.min(Math.max(this.scaleFactor, this.data.minScale), this.data.maxScale);
-
-                    this.el.object3D.scale.x = this.scaleFactor * this.initialScale.x;
-                    this.el.object3D.scale.y = this.scaleFactor * this.initialScale.y;
-                    this.el.object3D.scale.z = this.scaleFactor * this.initialScale.z;
-                }
+        
+        // Touch gestures cho mobile
+        let isTouch = false;
+        let startX, startY;
+        
+        const canvasArea = document.getElementById('canvas-area');
+        
+        canvasArea.addEventListener('touchstart', function(e) {
+            isTouch = true;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+        
+        canvasArea.addEventListener('touchmove', function(e) {
+            if (!isTouch) return;
+            e.preventDefault();
+            
+            const deltaX = e.touches[0].clientX - startX;
+            const deltaY = e.touches[0].clientY - startY;
+            
+            if (Math.abs(deltaX) > 30) {
+                rotateModel();
+                isTouch = false;
+            } else if (Math.abs(deltaY) > 30) {
+                scaleModel();
+                isTouch = false;
             }
         });
-
-        // Initialize
-        console.log('AR GLB Viewer initialized');
-        showNotification('🚀 AR GLB Viewer đã sẵn sàng!', 'success');
+        
+        canvasArea.addEventListener('touchend', function() {
+            isTouch = false;
+        });
+        
+        // Click để xoay
+        canvasArea.addEventListener('click', function() {
+            rotateModel();
+        });
+        
+        console.log('🎮 3D Model Viewer XAMPP Version loaded successfully!');
     </script>
 </body>
 </html>
