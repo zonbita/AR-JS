@@ -383,14 +383,7 @@
         <p>Show this image to your camera: <a href="https://ar-js-org.github.io/AR.js/data/images/hiro.png" target="_blank" style="color: #4CAF50;">Download Marker</a></p>
     </div>
     
-    <div class="controls">
-        <button class="control-btn" onclick="toggleModel()">🔄 Toggle Model</button>
-        <button class="control-btn" onclick="changeModel()">🎨 Change Model</button>
-        <button class="control-btn" onclick="resetScene()">⚡ Reset</button>
-        <button class="control-btn" onclick="testCamera()">📷 Test Camera</button>
-        <button class="control-btn" onclick="stopCameraPreview()">⏹️ Stop Camera</button>
-        <button class="control-btn" onclick="debugMarker()">🐛 Debug Marker</button>
-    </div>
+
     
     <div class="loading" id="loading">
         <div class="spinner"></div>
@@ -402,25 +395,9 @@
         🔍 Checking camera permissions...
     </div>
     
-    <!-- Camera Preview -->
-    <div class="camera-preview" id="camera-preview">
-        <div class="camera-header">
-            <h4>📷 Camera Preview</h4>
-            <div class="camera-controls">
-                <button class="camera-toggle" onclick="toggleCameraPreview()">👁️ Show</button>
-            </div>
-        </div>
-        <video id="camera-video" autoplay muted playsinline></video>
-    </div>
+
     
-    <!-- Fullscreen Camera Overlay -->
-    <div class="fullscreen-camera" id="fullscreen-camera">
-        <div class="fullscreen-header">
-            <h3>📷 Camera Fullscreen</h3>
-            <button class="close-fullscreen" onclick="exitFullscreen()">✕</button>
-        </div>
-        <video id="fullscreen-video" autoplay muted playsinline></video>
-    </div>
+
 
     <a-scene
         vr-mode-ui="enabled: false"
@@ -431,28 +408,12 @@
 
         <!-- Hiro Marker -->
         <a-marker preset="hiro" id="hiro-marker">
-            <!-- 3D Model Container -->
-            <a-entity id="model-container" position="0 0 0" scale="1 1 1">
-                <!-- Default Cube Model -->
-                <a-box 
-                    id="default-model"
-                    position="0 0.5 0" 
-                    width="1" 
-                    height="1" 
-                    depth="1" 
-                    color="#4CAF50"
-                    material="opacity: 0.8"
-                    animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
-                </a-box>
-                
-                <!-- GLB Model (will be loaded dynamically) -->
-                <a-entity 
-                    id="glb-model"
-                    position="0 0 0" 
-                    scale="1 1 1"
-                    gltf-model=""
-                    visible="false">
-                </a-entity>
+            <!-- Single GLB Model -->
+            <a-entity 
+                id="glb-model"
+                position="0 0 0" 
+                scale="1 1 1"
+                gltf-model="https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf">
             </a-entity>
             
             <!-- Text Label -->
@@ -475,19 +436,9 @@
     </a-scene>
 
     <script>
-        let currentModelIndex = 0;
-        let isModelVisible = true;
         let cameraStream = null;
         
-        // Sample GLB models (you can replace these with your own)
-        const glbModels = [
-            'https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf',
-            'https://threejs.org/examples/models/gltf/Flamingo/glTF/Flamingo.gltf',
-            'https://threejs.org/examples/models/gltf/Parrot/glTF/Parrot.gltf',
-            'https://threejs.org/examples/models/gltf/Stork/glTF/Stork.gltf'
-        ];
-        
-        // Check camera permissions and availability
+                // Check camera permissions and availability
         async function checkCameraPermissions() {
             const statusBar = document.getElementById('status-bar');
             
@@ -518,23 +469,12 @@
                 statusBar.textContent = '✅ Camera ready - Point at Hiro marker';
                 statusBar.style.background = 'rgba(76, 175, 80, 0.9)';
                 
-                                 // Start camera preview automatically
-                 const video = document.getElementById('camera-video');
-                 video.srcObject = stream;
-                 document.getElementById('camera-preview').classList.add('video-active');
-                 document.querySelector('.camera-toggle').textContent = '🙈 Hide';
-                 document.querySelector('.camera-toggle').style.background = 'rgba(255, 255, 255, 0.4)';
-                 
-                 // Hide loading screen
-                 setTimeout(() => {
-                     document.getElementById('loading').classList.add('hidden');
-                     // Automatically enter fullscreen after loading
-                     setTimeout(() => {
-                         enterFullscreen();
-                     }, 500);
-                 }, 1000);
-                 
-                 return true;
+                // Hide loading screen
+                setTimeout(() => {
+                    document.getElementById('loading').classList.add('hidden');
+                }, 1000);
+                
+                return true;
                 
             } catch (error) {
                 console.error('Camera error:', error);
@@ -688,9 +628,6 @@
             const cameraReady = await checkCameraPermissions();
             
             if (cameraReady) {
-                // Preload GLB models for better performance
-                preloadGLBModels();
-                
                 // Add marker detection events
                 const marker = document.getElementById('hiro-marker');
                 
@@ -698,11 +635,6 @@
                     console.log('Hiro marker detected!');
                     showNotification('🎯 Hiro marker detected!', 'success');
                     document.getElementById('status-bar').textContent = '🎯 Marker detected!';
-                    
-                    // Automatically show GLB model when marker is found
-                    setTimeout(() => {
-                        showGLBModel();
-                    }, 500);
                 });
                 
                 marker.addEventListener('markerLost', function() {
@@ -712,14 +644,6 @@
                 });
                 
                 // Add AR.js events
-                document.addEventListener('arjs-nft-loaded', function(evt) {
-                    console.log('NFT marker loaded', evt);
-                });
-                
-                document.addEventListener('arjs-marker-found', function(evt) {
-                    console.log('Marker found', evt);
-                });
-                
                 document.addEventListener('arjs-camera-init', function(evt) {
                     console.log('AR.js camera initialized', evt);
                     showNotification('📷 AR.js camera ready - Scan Hiro marker', 'success');
@@ -728,12 +652,6 @@
                 document.addEventListener('arjs-camera-error', function(evt) {
                     console.error('AR.js camera error', evt);
                     showNotification('❌ AR.js camera error', 'warning');
-                });
-                
-                // Add scene loaded event
-                document.addEventListener('scene-loaded', function() {
-                    console.log('A-Frame scene loaded');
-                    showNotification('🎬 AR scene ready - Point camera at Hiro marker', 'success');
                 });
             }
         });
@@ -934,6 +852,44 @@
                 
                 console.log('Camera preview stopped');
             }
+        }
+        
+        // Debug marker detection
+        function debugMarker() {
+            const marker = document.getElementById('hiro-marker');
+            const scene = document.querySelector('a-scene');
+            
+            console.log('=== MARKER DEBUG INFO ===');
+            console.log('Marker element:', marker);
+            console.log('Scene element:', scene);
+            console.log('AR.js version:', AFRAME.version);
+            console.log('Camera stream:', cameraStream);
+            console.log('Current model index:', currentModelIndex);
+            console.log('GLB models:', glbModels);
+            
+            // Check if marker is visible
+            const markerVisible = marker.getAttribute('visible');
+            console.log('Marker visible:', markerVisible);
+            
+            // Check marker position
+            const markerPosition = marker.getAttribute('position');
+            console.log('Marker position:', markerPosition);
+            
+            // Check if models are loaded
+            const defaultModel = document.getElementById('default-model');
+            const glbModel = document.getElementById('glb-model');
+            console.log('Default model visible:', defaultModel.getAttribute('visible'));
+            console.log('GLB model visible:', defaultModel.getAttribute('visible'));
+            console.log('GLB model visible:', glbModel.getAttribute('visible'));
+            console.log('GLB model src:', glbModel.getAttribute('gltf-model'));
+            
+            showNotification('🐛 Debug info logged to console', 'info');
+        }
+        
+        // Force show GLB model for testing
+        function forceShowGLB() {
+            showGLBModel();
+            showNotification('🎯 GLB model forced to show - Check if visible', 'warning');
         }
         
         // Cleanup on page unload
