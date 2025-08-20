@@ -3,556 +3,418 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR.js - Hiro Marker Scanner</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.min.js"></script>
-    <script src="https://raw.githack.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
-    
+    <title>Camera Test - AR.js Setup</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
             font-family: Arial, sans-serif;
-            background: #000;
-            color: white;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
         }
         
-        .ar-info {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px 25px;
-            border-radius: 25px;
-            text-align: center;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .ar-info h2 {
-            margin: 0 0 10px 0;
-            font-size: 18px;
-            color: #4CAF50;
-        }
-        
-        .ar-info p {
-            margin: 0;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .marker-info {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px 25px;
-            border-radius: 25px;
-            text-align: center;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .marker-info h3 {
-            margin: 0 0 10px 0;
-            font-size: 16px;
-            color: #2196F3;
-        }
-        
-        .marker-info p {
-            margin: 0;
-            font-size: 12px;
-            opacity: 0.9;
-        }
-        
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .loading h3 {
-            margin: 0 0 15px 0;
-            color: #FF9800;
-        }
-        
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #4CAF50;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-        
-        .control-btn {
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 20px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-        
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .camera-error {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(244, 67, 54, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            z-index: 1001;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            max-width: 400px;
-        }
-        
-        .camera-error h3 {
-            margin: 0 0 15px 0;
-            color: white;
-        }
-        
-        .camera-error p {
-            margin: 0 0 15px 0;
-            font-size: 14px;
-        }
-        
-        .camera-error button {
+        .container {
             background: white;
-            color: #f44336;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            margin: 5px;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
-        .status-bar {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 20px;
-            border-radius: 20px;
+        h1 {
+            color: #333;
             text-align: center;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .video-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .info-box h4 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
             font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .step-list {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .step-list h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .step-list ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .step-list li {
+            margin: 5px 0;
         }
     </style>
 </head>
 <body>
-    <div class="ar-info">
-        <h2>🎯 AR Scanner Active</h2>
-        <p>Point your camera at the Hiro marker</p>
-    </div>
-    
-    <div class="marker-info">
-        <h3>📱 Hiro Marker</h3>
-        <p>Show this image to your camera: <a href="https://ar-js-org.github.io/AR.js/data/images/hiro.png" target="_blank" style="color: #4CAF50;">Download Marker</a></p>
-    </div>
-    
-    <div class="controls">
-        <button class="control-btn" onclick="toggleModel()">🔄 Toggle Model</button>
-        <button class="control-btn" onclick="changeModel()">🎨 Change Model</button>
-        <button class="control-btn" onclick="resetScene()">⚡ Reset</button>
-        <button class="control-btn" onclick="testCamera()">📷 Test Camera</button>
-    </div>
-    
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <h3>Loading AR Scene...</h3>
-        <p>Please wait while we initialize the AR experience</p>
-    </div>
-
-    <div class="status-bar" id="status-bar">
-        🔍 Checking camera permissions...
-    </div>
-
-    <a-scene
-        vr-mode-ui="enabled: false"
-        embedded
-        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-        renderer="logarithmicDepthBuffer: true;"
-        vr-mode-ui="enabled: false">
-
-        <!-- Hiro Marker -->
-        <a-marker preset="hiro" id="hiro-marker">
-            <!-- 3D Model Container -->
-            <a-entity id="model-container" position="0 0 0" scale="1 1 1">
-                <!-- Default Cube Model -->
-                <a-box 
-                    id="default-model"
-                    position="0 0.5 0" 
-                    width="1" 
-                    height="1" 
-                    depth="1" 
-                    color="#4CAF50"
-                    material="opacity: 0.8"
-                    animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
-                </a-box>
-                
-                <!-- GLB Model (will be loaded dynamically) -->
-                <a-entity 
-                    id="glb-model"
-                    position="0 0 0" 
-                    scale="1 1 1"
-                    gltf-model=""
-                    visible="false">
-                </a-entity>
-            </a-entity>
-            
-            <!-- Text Label -->
-            <a-text 
-                value="Hiro Marker Detected!" 
-                position="0 1.5 0" 
-                align="center" 
-                color="#FFFFFF" 
-                font="kelsonsans"
-                scale="0.5 0.5 0.5">
-            </a-text>
-        </a-marker>
-
-        <!-- Camera -->
-        <a-entity camera></a-entity>
+    <div class="container">
+        <h1>📷 Camera Test - AR.js Setup</h1>
         
-        <!-- Lighting -->
-        <a-light type="ambient" color="#FFFFFF" intensity="0.6"></a-light>
-        <a-light type="directional" position="0 10 5" color="#FFFFFF" intensity="0.8"></a-light>
-    </a-scene>
+        <div class="info-box">
+            <h4>ℹ️ What this test does:</h4>
+            <p>This page tests your camera access and browser compatibility before running the AR.js application. It will help identify any issues that might prevent the AR app from working.</p>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Browser Compatibility Check</h3>
+            <div id="browser-status" class="status info">Checking browser compatibility...</div>
+            <button onclick="checkBrowserCompatibility()">🔄 Recheck Browser</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📱 Camera Access Test</h3>
+            <div id="camera-status" class="status info">Click "Test Camera" to start</div>
+            <div class="video-container">
+                <video id="video" autoplay muted playsinline></video>
+            </div>
+            <button onclick="testCamera()" id="test-camera-btn">📷 Test Camera</button>
+            <button onclick="stopCamera()" id="stop-camera-btn" disabled>⏹️ Stop Camera</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔐 Permission Status</h3>
+            <div id="permission-status" class="status info">Click "Check Permissions" to start</div>
+            <button onclick="checkPermissions()">🔍 Check Permissions</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🐛 Debug Information</h3>
+            <button onclick="showDebugInfo()">📊 Show Debug Info</button>
+            <div id="debug-output" class="debug-info" style="display: none;"></div>
+        </div>
+        
+        <div class="step-list">
+            <h4>🚀 Next Steps:</h4>
+            <ol>
+                <li>Run all tests above to check compatibility</li>
+                <li>If camera test passes, try the AR app</li>
+                <li>If issues persist, check the debug information</li>
+                <li>Ensure you're using HTTPS (required for camera)</li>
+            </ol>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎯 Try AR App</h3>
+            <p>If all tests pass, you can now try the AR application:</p>
+            <button onclick="openARApp()" style="background: #28a745;">🎮 Open AR App</button>
+        </div>
+    </div>
 
     <script>
-        let currentModelIndex = 0;
-        let isModelVisible = true;
         let cameraStream = null;
         
-        // Sample GLB models (you can replace these with your own)
-        const glbModels = [
-            'https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf',
-            'https://threejs.org/examples/models/gltf/Flamingo/glTF/Flamingo.gltf',
-            'https://threejs.org/examples/models/gltf/Parrot/glTF/Parrot.gltf',
-            'https://threejs.org/examples/models/gltf/Stork/glTF/Stork.gltf'
-        ];
-        
-        // Check camera permissions and availability
-        async function checkCameraPermissions() {
-            const statusBar = document.getElementById('status-bar');
+        // Check browser compatibility
+        function checkBrowserCompatibility() {
+            const statusDiv = document.getElementById('browser-status');
+            const checks = {
+                'HTTPS/SSL': window.location.protocol === 'https:',
+                'MediaDevices API': !!navigator.mediaDevices,
+                'getUserMedia': !!navigator.mediaDevices?.getUserMedia,
+                'Permissions API': !!navigator.permissions,
+                'WebGL': checkWebGL(),
+                'Modern Browser': checkModernBrowser()
+            };
             
+            const failedChecks = Object.entries(checks).filter(([name, passed]) => !passed);
+            
+            if (failedChecks.length === 0) {
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ All browser compatibility checks passed!';
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Some checks failed: ${failedChecks.map(([name]) => name).join(', ')}`;
+            }
+            
+            console.log('Browser compatibility check:', checks);
+        }
+        
+        // Check WebGL support
+        function checkWebGL() {
             try {
-                // Check if getUserMedia is supported
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Camera API not supported in this browser');
-                }
-                
-                // Check permissions
-                if (navigator.permissions && navigator.permissions.query) {
-                    const permission = await navigator.permissions.query({ name: 'camera' });
-                    if (permission.state === 'denied') {
-                        throw new Error('Camera permission denied. Please enable camera access in your browser settings.');
-                    }
-                }
-                
-                // Try to get camera stream
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
-                });
-                
-                cameraStream = stream;
-                statusBar.textContent = '✅ Camera ready - Point at Hiro marker';
-                statusBar.style.background = 'rgba(76, 175, 80, 0.9)';
-                
-                // Hide loading screen
-                setTimeout(() => {
-                    document.getElementById('loading').classList.add('hidden');
-                }, 1000);
-                
-                return true;
-                
-            } catch (error) {
-                console.error('Camera error:', error);
-                showCameraError(error.message);
+                const canvas = document.createElement('canvas');
+                return !!(window.WebGLRenderingContext && 
+                    (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+            } catch (e) {
                 return false;
             }
         }
         
-        // Show camera error with solutions
-        function showCameraError(message) {
-            const loading = document.getElementById('loading');
-            loading.classList.add('hidden');
+        // Check if browser is modern enough
+        function checkModernBrowser() {
+            const userAgent = navigator.userAgent;
+            const isChrome = userAgent.includes('Chrome') && parseInt(userAgent.match(/Chrome\/(\d+)/)?.[1] || '0') >= 67;
+            const isFirefox = userAgent.includes('Firefox') && parseInt(userAgent.match(/Firefox\/(\d+)/)?.[1] || '0') >= 55;
+            const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome') && parseInt(userAgent.match(/Version\/(\d+)/)?.[1] || '0') >= 11;
+            const isEdge = userAgent.includes('Edg') && parseInt(userAgent.match(/Edg\/(\d+)/)?.[1] || '0') >= 79;
             
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'camera-error';
-            errorDiv.innerHTML = `
-                <h3>📷 Camera Access Error</h3>
-                <p>${message}</p>
-                <p><strong>Solutions:</strong></p>
-                <ul style="text-align: left; margin: 15px 0;">
-                    <li>Allow camera access when prompted</li>
-                    <li>Check browser camera permissions</li>
-                    <li>Use HTTPS (required for camera)</li>
-                    <li>Try refreshing the page</li>
-                </ul>
-                <button onclick="retryCamera()">🔄 Retry Camera</button>
-                <button onclick="showDebugInfo()">🐛 Debug Info</button>
-            `;
-            
-            document.body.appendChild(errorDiv);
+            return isChrome || isFirefox || isSafari || isEdge;
         }
         
-        // Retry camera access
-        async function retryCamera() {
-            const errorDiv = document.querySelector('.camera-error');
-            if (errorDiv) errorDiv.remove();
+        // Test camera access
+        async function testCamera() {
+            const statusDiv = document.getElementById('camera-status');
+            const testBtn = document.getElementById('test-camera-btn');
+            const stopBtn = document.getElementById('stop-camera-btn');
+            const video = document.getElementById('video');
             
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('status-bar').textContent = '🔄 Retrying camera access...';
+            try {
+                statusDiv.className = 'status info';
+                statusDiv.textContent = '🔄 Requesting camera access...';
+                
+                testBtn.disabled = true;
+                
+                // Request camera access
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment', // Use back camera if available
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                
+                cameraStream = stream;
+                
+                // Display video stream
+                video.srcObject = stream;
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Camera access successful! Video stream is active.';
+                
+                stopBtn.disabled = false;
+                
+                console.log('Camera test successful:', stream);
+                
+            } catch (error) {
+                console.error('Camera test failed:', error);
+                
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Camera access failed: ${error.message}`;
+                
+                testBtn.disabled = false;
+                
+                // Show specific error messages
+                if (error.name === 'NotAllowedError') {
+                    statusDiv.textContent += ' - Permission denied. Please allow camera access.';
+                } else if (error.name === 'NotFoundError') {
+                    statusDiv.textContent += ' - No camera found on this device.';
+                } else if (error.name === 'NotReadableError') {
+                    statusDiv.textContent += ' - Camera is in use by another application.';
+                } else if (error.name === 'OverconstrainedError') {
+                    statusDiv.textContent += ' - Camera constraints not met.';
+                }
+            }
+        }
+        
+        // Stop camera
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                
+                const video = document.getElementById('video');
+                video.srcObject = null;
+                
+                const statusDiv = document.getElementById('camera-status');
+                statusDiv.className = 'status info';
+                statusDiv.textContent = '⏹️ Camera stopped';
+                
+                document.getElementById('test-camera-btn').disabled = false;
+                document.getElementById('stop-camera-btn').disabled = true;
+            }
+        }
+        
+        // Check permissions
+        async function checkPermissions() {
+            const statusDiv = document.getElementById('permission-status');
             
-            const success = await checkCameraPermissions();
-            if (!success) {
-                document.getElementById('status-bar').textContent = '❌ Camera access failed';
+            try {
+                if (!navigator.permissions) {
+                    statusDiv.className = 'status warning';
+                    statusDiv.textContent = '⚠️ Permissions API not supported in this browser';
+                    return;
+                }
+                
+                const cameraPermission = await navigator.permissions.query({ name: 'camera' });
+                
+                switch (cameraPermission.state) {
+                    case 'granted':
+                        statusDiv.className = 'status success';
+                        statusDiv.textContent = '✅ Camera permission granted';
+                        break;
+                    case 'denied':
+                        statusDiv.className = 'status error';
+                        statusDiv.textContent = '❌ Camera permission denied. Please enable in browser settings.';
+                        break;
+                    case 'prompt':
+                        statusDiv.className = 'status warning';
+                        statusDiv.textContent = '⚠️ Camera permission not set. Will prompt when needed.';
+                        break;
+                    default:
+                        statusDiv.className = 'status info';
+                        statusDiv.textContent = 'ℹ️ Camera permission status unknown';
+                }
+                
+                console.log('Camera permission status:', cameraPermission.state);
+                
+            } catch (error) {
+                console.error('Permission check failed:', error);
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Permission check failed: ${error.message}`;
             }
         }
         
         // Show debug information
         function showDebugInfo() {
+            const debugDiv = document.getElementById('debug-output');
+            
             const debugInfo = {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                cookieEnabled: navigator.cookieEnabled,
-                onLine: navigator.onLine,
-                mediaDevices: !!navigator.mediaDevices,
-                getUserMedia: !!navigator.mediaDevices?.getUserMedia,
-                permissions: !!navigator.permissions,
-                protocol: window.location.protocol,
-                hostname: window.location.hostname,
-                port: window.location.port
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Cookie Enabled': navigator.cookieEnabled,
+                'Online': navigator.onLine,
+                'Protocol': window.location.protocol,
+                'Hostname': window.location.hostname,
+                'Port': window.location.port,
+                'Pathname': window.location.pathname,
+                'MediaDevices': !!navigator.mediaDevices,
+                'getUserMedia': !!navigator.mediaDevices?.getUserMedia,
+                'Permissions API': !!navigator.permissions,
+                'WebGL': checkWebGL(),
+                'Screen Resolution': `${screen.width}x${screen.height}`,
+                'Window Size': `${window.innerWidth}x${window.innerHeight}`,
+                'Device Pixel Ratio': window.devicePixelRatio,
+                'Touch Support': 'ontouchstart' in window,
+                'Mobile': /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
             };
             
-            console.log('Debug Info:', debugInfo);
-            alert('Debug info logged to console. Check browser developer tools.');
+            debugDiv.textContent = JSON.stringify(debugInfo, null, 2);
+            debugDiv.style.display = 'block';
         }
         
-        // Test camera function
-        async function testCamera() {
-            const statusBar = document.getElementById('status-bar');
-            statusBar.textContent = '🧪 Testing camera...';
-            
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                statusBar.textContent = '✅ Camera test successful!';
-                statusBar.style.background = 'rgba(76, 175, 80, 0.9)';
-                
-                // Stop the test stream
-                stream.getTracks().forEach(track => track.stop());
-                
-                setTimeout(() => {
-                    statusBar.textContent = '✅ Camera ready - Point at Hiro marker';
-                }, 2000);
-                
-            } catch (error) {
-                statusBar.textContent = '❌ Camera test failed';
-                statusBar.style.background = 'rgba(244, 67, 54, 0.9)';
-                console.error('Camera test error:', error);
-            }
+        // Open AR app
+        function openARApp() {
+            window.open('ar-app.html', '_blank');
         }
         
-        // Initialize AR scene
-        window.addEventListener('load', async function() {
-            console.log('AR.js scene loading...');
+        // Initialize page
+        window.addEventListener('load', function() {
+            console.log('Camera test page loaded');
             
-            // Check camera permissions first
-            const cameraReady = await checkCameraPermissions();
+            // Run initial checks
+            checkBrowserCompatibility();
+            checkPermissions();
             
-            if (cameraReady) {
-                // Add marker detection events
-                const marker = document.getElementById('hiro-marker');
-                
-                marker.addEventListener('markerFound', function() {
-                    console.log('Hiro marker detected!');
-                    showNotification('🎯 Hiro marker detected!', 'success');
-                    document.getElementById('status-bar').textContent = '🎯 Marker detected!';
-                });
-                
-                marker.addEventListener('markerLost', function() {
-                    console.log('Hiro marker lost');
-                    showNotification('❌ Marker lost - keep it in view', 'warning');
-                    document.getElementById('status-bar').textContent = '✅ Camera ready - Point at Hiro marker';
-                });
-                
-                // Add AR.js events
-                document.addEventListener('arjs-nft-loaded', function(evt) {
-                    console.log('NFT marker loaded', evt);
-                });
-                
-                document.addEventListener('arjs-marker-found', function(evt) {
-                    console.log('Marker found', evt);
-                });
-                
-                document.addEventListener('arjs-camera-init', function(evt) {
-                    console.log('AR.js camera initialized', evt);
-                });
-                
-                document.addEventListener('arjs-camera-error', function(evt) {
-                    console.error('AR.js camera error', evt);
-                    showNotification('❌ AR.js camera error', 'warning');
-                });
-            }
-        });
-        
-        // Toggle between default cube and GLB model
-        function toggleModel() {
-            const defaultModel = document.getElementById('default-model');
-            const glbModel = document.getElementById('glb-model');
-            
-            if (isModelVisible) {
-                defaultModel.setAttribute('visible', false);
-                glbModel.setAttribute('visible', true);
-                showNotification('🎨 Switched to GLB model', 'info');
-            } else {
-                defaultModel.setAttribute('visible', true);
-                glbModel.setAttribute('visible', false);
-                showNotification('🎨 Switched to default cube', 'info');
-            }
-            
-            isModelVisible = !isModelVisible;
-        }
-        
-        // Change GLB model
-        function changeModel() {
-            const glbModel = document.getElementById('glb-model');
-            currentModelIndex = (currentModelIndex + 1) % glbModels.length;
-            
-            const newModelUrl = glbModels[currentModelIndex];
-            glbModel.setAttribute('gltf-model', newModelUrl);
-            
-            showNotification(`🔄 Changed to model ${currentModelIndex + 1}`, 'info');
-        }
-        
-        // Reset scene
-        function resetScene() {
-            const defaultModel = document.getElementById('default-model');
-            const glbModel = document.getElementById('glb-model');
-            
-            defaultModel.setAttribute('visible', true);
-            glbModel.setAttribute('visible', false);
-            isModelVisible = true;
-            
-            // Reset model rotation
-            defaultModel.setAttribute('rotation', '0 0 0');
-            
-            showNotification('⚡ Scene reset!', 'success');
-        }
-        
-        // Show notification
-        function showNotification(message, type = 'info') {
-            // Remove existing notification
-            const existing = document.querySelector('.notification');
-            if (existing) existing.remove();
-            
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 120px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: ${type === 'success' ? 'rgba(76, 175, 80, 0.9)' : 
-                           type === 'warning' ? 'rgba(255, 152, 0, 0.9)' : 
-                           'rgba(33, 150, 243, 0.9)'};
-                color: white;
-                padding: 10px 20px;
-                border-radius: 20px;
-                z-index: 1001;
-                font-weight: bold;
-                backdrop-filter: blur(10px);
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 3000);
-        }
-        
-        // Add touch gestures for mobile
-        let touchStartY = 0;
-        let touchStartX = 0;
-        
-        document.addEventListener('touchstart', function(e) {
-            touchStartY = e.touches[0].clientY;
-            touchStartX = e.touches[0].clientX;
-        });
-        
-        document.addEventListener('touchend', function(e) {
-            const touchEndY = e.changedTouches[0].clientY;
-            const touchEndX = e.changedTouches[0].clientX;
-            
-            const deltaY = touchStartY - touchEndY;
-            const deltaX = touchStartX - touchEndX;
-            
-            // Swipe up/down to toggle model
-            if (Math.abs(deltaY) > 50 && Math.abs(deltaY) > Math.abs(deltaX)) {
-                if (deltaY > 0) {
-                    toggleModel();
-                }
-            }
-            
-            // Swipe left/right to change model
-            if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
-                if (deltaX > 0) {
-                    changeModel();
-                } else {
-                    resetScene();
-                }
+            // Check if running on HTTPS
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                const statusDiv = document.getElementById('browser-status');
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ HTTPS required for camera access! Use localhost or HTTPS server.';
             }
         });
         
@@ -562,9 +424,6 @@
                 cameraStream.getTracks().forEach(track => track.stop());
             }
         });
-        
-        console.log('🎯 AR.js Hiro Marker Scanner loaded successfully!');
-        console.log('📱 Point your camera at the Hiro marker to see the 3D model');
     </script>
 </body>
 </html>
