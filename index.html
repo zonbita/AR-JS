@@ -84,7 +84,7 @@
     <a-scene
         vr-mode-ui="enabled: false"
         embedded
-        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true; detectionMode: mono;">
+        arjs="sourceType: webcam; debugUIEnabled: true;">
 
         <!-- Hiro Marker -->
         <a-marker preset="hiro">
@@ -98,9 +98,17 @@
                 gltf-model="https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf">
             </a-entity>
         </a-marker>
+        
+        <!-- Simple Test Marker -->
+        <a-marker preset="barcode">
+            <a-sphere position="0 0 0" material="color: blue;" scale="0.5 0.5 0.5"></a-sphere>
+        </a-marker>
 
         <!-- Camera -->
         <a-entity camera></a-entity>
+        
+        <!-- Always visible test cube -->
+        <a-box position="0 0 -5" material="color: yellow;" scale="1 1 1"></a-box>
         
         <!-- Lighting -->
         <a-light type="ambient" color="#FFFFFF" intensity="0.6"></a-light>
@@ -182,9 +190,11 @@
             
             // Get Hiro marker
             const hiroMarker = document.querySelector('a-marker[preset="hiro"]');
+            const testMarker = document.querySelector('a-marker[preset="barcode"]');
             const statusDiv = document.getElementById('status');
             
             console.log('🎯 Hiro marker element:', hiroMarker);
+            console.log('🧪 Test marker element:', testMarker);
             
             if (hiroMarker) {
                 // Hiro marker events
@@ -203,10 +213,27 @@
                 });
             }
             
+            if (testMarker) {
+                // Test marker events
+                testMarker.addEventListener('markerFound', function() {
+                    console.log('🧪 Test marker detected!');
+                    statusDiv.textContent = 'Status: 🧪 Test marker detected!';
+                    statusDiv.style.background = '#2196F3';
+                    statusDiv.style.color = 'white';
+                });
+                
+                testMarker.addEventListener('markerLost', function() {
+                    console.log('❌ Test marker lost');
+                    statusDiv.textContent = 'Status: ❌ Test marker lost';
+                    statusDiv.style.background = '#f44336';
+                    statusDiv.style.color = 'white';
+                });
+            }
+            
             // Add AR.js events
             document.addEventListener('arjs-camera-init', function(evt) {
                 console.log('📹 AR.js camera initialized', evt);
-                statusDiv.textContent = 'Status: 📹 Camera ready - scan Hiro marker';
+                statusDiv.textContent = 'Status: 📹 Camera ready - scan markers';
                 statusDiv.style.background = '#2196F3';
                 statusDiv.style.color = 'white';
             });
@@ -217,6 +244,19 @@
                 statusDiv.style.background = '#f44336';
                 statusDiv.style.color = 'white';
             });
+            
+            // Add basic A-Frame events
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('🌐 DOM loaded');
+            });
+            
+            // Check if scene is loaded
+            const scene = document.querySelector('a-scene');
+            if (scene) {
+                scene.addEventListener('loaded', function() {
+                    console.log('🎮 A-Frame scene loaded');
+                });
+            }
         }
         
         // Cleanup on page unload
@@ -234,41 +274,57 @@
             console.log('🔍 Debug button clicked');
             
             const hiroMarker = document.querySelector('a-marker[preset="hiro"]');
+            const testMarker = document.querySelector('a-marker[preset="barcode"]');
+            const scene = document.querySelector('a-scene');
             
             console.log('📊 Hiro marker element:', hiroMarker);
+            console.log('🧪 Test marker element:', testMarker);
+            console.log('🎮 Scene element:', scene);
             
             // Test Hiro marker
             if (hiroMarker && hiroMarker.object3D) {
                 console.log('🎯 Hiro marker 3D object:', hiroMarker.object3D);
                 console.log('👁️ Hiro marker visible:', hiroMarker.object3D.visible);
                 console.log('📍 Hiro marker position:', hiroMarker.object3D.position);
-                console.log('🔄 Hiro marker rotation:', hiroMarker.object3D.rotation);
-                console.log('📏 Hiro marker scale:', hiroMarker.object3D.scale);
+            } else {
+                console.log('❌ Hiro marker not found or no 3D object');
+            }
+            
+            // Test marker
+            if (testMarker && testMarker.object3D) {
+                console.log('🧪 Test marker 3D object:', testMarker.object3D);
+                console.log('👁️ Test marker visible:', testMarker.object3D.visible);
+            } else {
+                console.log('❌ Test marker not found or no 3D object');
             }
             
             // Check AR.js status
-            const scene = document.querySelector('a-scene');
             if (scene && scene.systems && scene.systems.arjs) {
                 console.log('🎮 AR.js system:', scene.systems.arjs);
-                console.log('📹 AR.js camera:', scene.systems.arjs.arProfile);
+            } else {
+                console.log('❌ AR.js system not found');
             }
             
             // Test camera stream
             if (cameraStream) {
                 console.log('📱 Camera stream active:', cameraStream.active);
                 console.log('📹 Camera tracks:', cameraStream.getTracks().length);
-                cameraStream.getTracks().forEach((track, index) => {
-                    console.log(`📹 Track ${index}:`, track.kind, track.readyState);
-                });
+            } else {
+                console.log('❌ No camera stream');
             }
             
-            // Force marker detection test
-            console.log('🧪 Testing marker detection...');
-            if (hiroMarker) {
-                // Simulate marker found
-                const markerFoundEvent = new CustomEvent('markerFound', { detail: hiroMarker });
-                hiroMarker.dispatchEvent(markerFoundEvent);
-                console.log('✅ Dispatched markerFound event for Hiro marker');
+            // Check if A-Frame is loaded
+            if (typeof AFRAME !== 'undefined') {
+                console.log('✅ A-Frame is loaded');
+            } else {
+                console.log('❌ A-Frame not loaded');
+            }
+            
+            // Check if AR.js is loaded
+            if (typeof ARjs !== 'undefined') {
+                console.log('✅ AR.js is loaded');
+            } else {
+                console.log('❌ AR.js not loaded');
             }
         }
     </script>
