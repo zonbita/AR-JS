@@ -389,6 +389,7 @@
         <button class="control-btn" onclick="resetScene()">⚡ Reset</button>
         <button class="control-btn" onclick="testCamera()">📷 Test Camera</button>
         <button class="control-btn" onclick="stopCameraPreview()">⏹️ Stop Camera</button>
+        <button class="control-btn" onclick="debugMarker()">🐛 Debug Marker</button>
     </div>
     
     <div class="loading" id="loading">
@@ -424,7 +425,7 @@
     <a-scene
         vr-mode-ui="enabled: false"
         embedded
-        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true; detectionMode: mono; matrixCodeType: 3x3; sourceWidth: 1280; sourceHeight: 720; displayWidth: 1280; displayHeight: 720;"
         renderer="logarithmicDepthBuffer: true;"
         vr-mode-ui="enabled: false">
 
@@ -687,6 +688,9 @@
             const cameraReady = await checkCameraPermissions();
             
             if (cameraReady) {
+                // Preload GLB models for better performance
+                preloadGLBModels();
+                
                 // Add marker detection events
                 const marker = document.getElementById('hiro-marker');
                 
@@ -694,6 +698,11 @@
                     console.log('Hiro marker detected!');
                     showNotification('🎯 Hiro marker detected!', 'success');
                     document.getElementById('status-bar').textContent = '🎯 Marker detected!';
+                    
+                    // Automatically show GLB model when marker is found
+                    setTimeout(() => {
+                        showGLBModel();
+                    }, 500);
                 });
                 
                 marker.addEventListener('markerLost', function() {
@@ -713,11 +722,18 @@
                 
                 document.addEventListener('arjs-camera-init', function(evt) {
                     console.log('AR.js camera initialized', evt);
+                    showNotification('📷 AR.js camera ready - Scan Hiro marker', 'success');
                 });
                 
                 document.addEventListener('arjs-camera-error', function(evt) {
                     console.error('AR.js camera error', evt);
                     showNotification('❌ AR.js camera error', 'warning');
+                });
+                
+                // Add scene loaded event
+                document.addEventListener('scene-loaded', function() {
+                    console.log('A-Frame scene loaded');
+                    showNotification('🎬 AR scene ready - Point camera at Hiro marker', 'success');
                 });
             }
         });
@@ -738,6 +754,35 @@
             }
             
             isModelVisible = !isModelVisible;
+        }
+        
+        // Preload GLB models for better performance
+        function preloadGLBModels() {
+            console.log('Preloading GLB models...');
+            glbModels.forEach((modelUrl, index) => {
+                const link = document.createElement('link');
+                link.rel = 'preload';
+                link.as = 'fetch';
+                link.href = modelUrl;
+                document.head.appendChild(link);
+                console.log(`Preloaded model ${index + 1}: ${modelUrl}`);
+            });
+        }
+        
+        // Show GLB model automatically
+        function showGLBModel() {
+            const defaultModel = document.getElementById('default-model');
+            const glbModel = document.getElementById('glb-model');
+            
+            // Hide default cube
+            defaultModel.setAttribute('visible', false);
+            
+            // Show GLB model
+            glbModel.setAttribute('visible', true);
+            glbModel.setAttribute('gltf-model', glbModels[currentModelIndex]);
+            
+            isModelVisible = false;
+            showNotification('🎨 GLB model loaded and displayed!', 'success');
         }
         
         // Change GLB model
