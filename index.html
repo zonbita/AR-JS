@@ -72,6 +72,7 @@
     <div class="info">
         <h2>🎯 AR Scanner</h2>
         <p>Point camera at <a href="https://ar-js-org.github.io/AR.js/data/images/hiro.png" target="_blank" class="marker-link">Hiro marker</a></p>
+        <div id="status" style="margin-top: 10px; padding: 8px; background: #333; border-radius: 5px; font-size: 12px;">Status: Waiting for marker...</div>
         <button id="debug-btn" onclick="debugMarker()" style="margin-top: 10px; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Debug Marker</button>
     </div>
 
@@ -83,24 +84,19 @@
     <a-scene
         vr-mode-ui="enabled: false"
         embedded
-        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true; detectionMode: mono; sourceWidth: 1280; sourceHeight: 720; displayWidth: 1280; displayHeight: 720; patternRatio: 0.75; trackingMethod: best;">
+        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true; detectionMode: mono;">
 
         <!-- Hiro Marker -->
-        <a-marker preset="hiro" emitevents="true" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+        <a-marker preset="hiro">
+            <!-- Test Cube (for debugging) -->
+            <a-box position="0 0 0" material="color: red;" scale="1 1 1"></a-box>
+            
             <!-- Single GLB Model -->
             <a-entity 
-                position="0 0 0" 
+                position="0 2 0" 
                 scale="1 1 1"
-                rotation="0 0 0"
-                gltf-model="https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf"
-                animation-mixer
-                class="clickable">
+                gltf-model="https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf">
             </a-entity>
-        </a-marker>
-        
-        <!-- Test Marker (for debugging) -->
-        <a-marker preset="barcode" emitevents="true" id="test-marker">
-            <a-box position="0 0 0" material="color: red;" scale="1 1 1"></a-box>
         </a-marker>
 
         <!-- Camera -->
@@ -184,80 +180,43 @@
         function setupMarkers() {
             console.log('🔧 Setting up marker detection...');
             
-            // Get all markers
+            // Get Hiro marker
             const hiroMarker = document.querySelector('a-marker[preset="hiro"]');
-            const testMarker = document.querySelector('#test-marker');
+            const statusDiv = document.getElementById('status');
             
             console.log('🎯 Hiro marker element:', hiroMarker);
-            console.log('🧪 Test marker element:', testMarker);
             
             if (hiroMarker) {
                 // Hiro marker events
                 hiroMarker.addEventListener('markerFound', function() {
                     console.log('🎯 Hiro marker detected!');
-                    console.log('📱 Marker found event triggered');
-                    
-                    // Force show the 3D model
-                    const model = hiroMarker.querySelector('a-entity');
-                    if (model) {
-                        model.setAttribute('visible', true);
-                        console.log('✅ 3D model should now be visible');
-                        
-                        // Add visual feedback
-                        document.body.style.backgroundColor = '#00ff00';
-                        setTimeout(() => {
-                            document.body.style.backgroundColor = '#000';
-                        }, 1000);
-                    }
+                    statusDiv.textContent = 'Status: ✅ Hiro marker detected!';
+                    statusDiv.style.background = '#4CAF50';
+                    statusDiv.style.color = 'white';
                 });
                 
                 hiroMarker.addEventListener('markerLost', function() {
                     console.log('❌ Hiro marker lost');
-                    document.body.style.backgroundColor = '#ff0000';
-                    setTimeout(() => {
-                        document.body.style.backgroundColor = '#000';
-                    }, 1000);
-                });
-            }
-            
-            if (testMarker) {
-                // Test marker events
-                testMarker.addEventListener('markerFound', function() {
-                    console.log('🧪 Test marker detected!');
-                    document.body.style.backgroundColor = '#0000ff';
-                    setTimeout(() => {
-                        document.body.style.backgroundColor = '#000';
-                    }, 1000);
-                });
-                
-                testMarker.addEventListener('markerLost', function() {
-                    console.log('❌ Test marker lost');
+                    statusDiv.textContent = 'Status: ❌ Hiro marker lost';
+                    statusDiv.style.background = '#f44336';
+                    statusDiv.style.color = 'white';
                 });
             }
             
             // Add AR.js events
             document.addEventListener('arjs-camera-init', function(evt) {
                 console.log('📹 AR.js camera initialized', evt);
+                statusDiv.textContent = 'Status: 📹 Camera ready - scan Hiro marker';
+                statusDiv.style.background = '#2196F3';
+                statusDiv.style.color = 'white';
             });
             
             document.addEventListener('arjs-camera-error', function(evt) {
                 console.error('🚨 AR.js camera error', evt);
+                statusDiv.textContent = 'Status: 🚨 Camera error';
+                statusDiv.style.background = '#f44336';
+                statusDiv.style.color = 'white';
             });
-            
-            // Check marker status after setup
-            setTimeout(() => {
-                console.log('⏰ Checking marker status after setup...');
-                if (hiroMarker && hiroMarker.object3D) {
-                    console.log('🎯 Hiro marker 3D object:', hiroMarker.object3D);
-                    console.log('👁️ Hiro marker visible:', hiroMarker.object3D.visible);
-                    console.log('📍 Hiro marker position:', hiroMarker.object3D.position);
-                }
-                
-                if (testMarker && testMarker.object3D) {
-                    console.log('🧪 Test marker 3D object:', testMarker.object3D);
-                    console.log('👁️ Test marker visible:', testMarker.object3D.visible);
-                }
-            }, 1000);
         }
         
         // Cleanup on page unload
@@ -274,32 +233,42 @@
         function debugMarker() {
             console.log('🔍 Debug button clicked');
             
-            const marker = document.querySelector('a-marker');
-            const model = marker.querySelector('a-entity');
+            const hiroMarker = document.querySelector('a-marker[preset="hiro"]');
             
-            console.log('📊 Marker element:', marker);
-            console.log('🎭 3D model element:', model);
+            console.log('📊 Hiro marker element:', hiroMarker);
             
-            if (marker && marker.object3D) {
-                console.log('🎯 Marker 3D object:', marker.object3D);
-                console.log('👁️ Marker visible:', marker.object3D.visible);
-                console.log('📍 Marker position:', marker.object3D.position);
-            }
-            
-            if (model && model.object3D) {
-                console.log('🎭 Model 3D object:', model.object3D);
-                console.log('👁️ Model visible:', model.object3D.visible);
-                console.log('📍 Model position:', model.object3D.position);
-                
-                // Force show the model
-                model.setAttribute('visible', true);
-                console.log('✅ Forced model to be visible');
+            // Test Hiro marker
+            if (hiroMarker && hiroMarker.object3D) {
+                console.log('🎯 Hiro marker 3D object:', hiroMarker.object3D);
+                console.log('👁️ Hiro marker visible:', hiroMarker.object3D.visible);
+                console.log('📍 Hiro marker position:', hiroMarker.object3D.position);
+                console.log('🔄 Hiro marker rotation:', hiroMarker.object3D.rotation);
+                console.log('📏 Hiro marker scale:', hiroMarker.object3D.scale);
             }
             
             // Check AR.js status
             const scene = document.querySelector('a-scene');
             if (scene && scene.systems && scene.systems.arjs) {
                 console.log('🎮 AR.js system:', scene.systems.arjs);
+                console.log('📹 AR.js camera:', scene.systems.arjs.arProfile);
+            }
+            
+            // Test camera stream
+            if (cameraStream) {
+                console.log('📱 Camera stream active:', cameraStream.active);
+                console.log('📹 Camera tracks:', cameraStream.getTracks().length);
+                cameraStream.getTracks().forEach((track, index) => {
+                    console.log(`📹 Track ${index}:`, track.kind, track.readyState);
+                });
+            }
+            
+            // Force marker detection test
+            console.log('🧪 Testing marker detection...');
+            if (hiroMarker) {
+                // Simulate marker found
+                const markerFoundEvent = new CustomEvent('markerFound', { detail: hiroMarker });
+                hiroMarker.dispatchEvent(markerFoundEvent);
+                console.log('✅ Dispatched markerFound event for Hiro marker');
             }
         }
     </script>
