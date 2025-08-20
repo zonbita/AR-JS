@@ -130,6 +130,57 @@
         .hidden {
             display: none;
         }
+        
+        .camera-error {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(244, 67, 54, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            max-width: 400px;
+        }
+        
+        .camera-error h3 {
+            margin: 0 0 15px 0;
+            color: white;
+        }
+        
+        .camera-error p {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+        }
+        
+        .camera-error button {
+            background: white;
+            color: #f44336;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        
+        .status-bar {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -147,6 +198,7 @@
         <button class="control-btn" onclick="toggleModel()">🔄 Toggle Model</button>
         <button class="control-btn" onclick="changeModel()">🎨 Change Model</button>
         <button class="control-btn" onclick="resetScene()">⚡ Reset</button>
+        <button class="control-btn" onclick="testCamera()">📷 Test Camera</button>
     </div>
     
     <div class="loading" id="loading">
@@ -155,10 +207,14 @@
         <p>Please wait while we initialize the AR experience</p>
     </div>
 
+    <div class="status-bar" id="status-bar">
+        🔍 Checking camera permissions...
+    </div>
+
     <a-scene
         vr-mode-ui="enabled: false"
         embedded
-        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
+        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         renderer="logarithmicDepthBuffer: true;"
         vr-mode-ui="enabled: false">
 
@@ -210,6 +266,7 @@
     <script>
         let currentModelIndex = 0;
         let isModelVisible = true;
+        let cameraStream = null;
         
         // Sample GLB models (you can replace these with your own)
         const glbModels = [
@@ -219,27 +276,173 @@
             'https://threejs.org/examples/models/gltf/Stork/glTF/Stork.gltf'
         ];
         
+        // Check camera permissions and availability
+        async function checkCameraPermissions() {
+            const statusBar = document.getElementById('status-bar');
+            
+            try {
+                // Check if getUserMedia is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera API not supported in this browser');
+                }
+                
+                // Check permissions
+                if (navigator.permissions && navigator.permissions.query) {
+                    const permission = await navigator.permissions.query({ name: 'camera' });
+                    if (permission.state === 'denied') {
+                        throw new Error('Camera permission denied. Please enable camera access in your browser settings.');
+                    }
+                }
+                
+                // Try to get camera stream
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                
+                cameraStream = stream;
+                statusBar.textContent = '✅ Camera ready - Point at Hiro marker';
+                statusBar.style.background = 'rgba(76, 175, 80, 0.9)';
+                
+                // Hide loading screen
+                setTimeout(() => {
+                    document.getElementById('loading').classList.add('hidden');
+                }, 1000);
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                showCameraError(error.message);
+                return false;
+            }
+        }
+        
+        // Show camera error with solutions
+        function showCameraError(message) {
+            const loading = document.getElementById('loading');
+            loading.classList.add('hidden');
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'camera-error';
+            errorDiv.innerHTML = `
+                <h3>📷 Camera Access Error</h3>
+                <p>${message}</p>
+                <p><strong>Solutions:</strong></p>
+                <ul style="text-align: left; margin: 15px 0;">
+                    <li>Allow camera access when prompted</li>
+                    <li>Check browser camera permissions</li>
+                    <li>Use HTTPS (required for camera)</li>
+                    <li>Try refreshing the page</li>
+                </ul>
+                <button onclick="retryCamera()">🔄 Retry Camera</button>
+                <button onclick="showDebugInfo()">🐛 Debug Info</button>
+            `;
+            
+            document.body.appendChild(errorDiv);
+        }
+        
+        // Retry camera access
+        async function retryCamera() {
+            const errorDiv = document.querySelector('.camera-error');
+            if (errorDiv) errorDiv.remove();
+            
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('status-bar').textContent = '🔄 Retrying camera access...';
+            
+            const success = await checkCameraPermissions();
+            if (!success) {
+                document.getElementById('status-bar').textContent = '❌ Camera access failed';
+            }
+        }
+        
+        // Show debug information
+        function showDebugInfo() {
+            const debugInfo = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                mediaDevices: !!navigator.mediaDevices,
+                getUserMedia: !!navigator.mediaDevices?.getUserMedia,
+                permissions: !!navigator.permissions,
+                protocol: window.location.protocol,
+                hostname: window.location.hostname,
+                port: window.location.port
+            };
+            
+            console.log('Debug Info:', debugInfo);
+            alert('Debug info logged to console. Check browser developer tools.');
+        }
+        
+        // Test camera function
+        async function testCamera() {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.textContent = '🧪 Testing camera...';
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                statusBar.textContent = '✅ Camera test successful!';
+                statusBar.style.background = 'rgba(76, 175, 80, 0.9)';
+                
+                // Stop the test stream
+                stream.getTracks().forEach(track => track.stop());
+                
+                setTimeout(() => {
+                    statusBar.textContent = '✅ Camera ready - Point at Hiro marker';
+                }, 2000);
+                
+            } catch (error) {
+                statusBar.textContent = '❌ Camera test failed';
+                statusBar.style.background = 'rgba(244, 67, 54, 0.9)';
+                console.error('Camera test error:', error);
+            }
+        }
+        
         // Initialize AR scene
-        window.addEventListener('load', function() {
-            console.log('AR.js scene loaded');
+        window.addEventListener('load', async function() {
+            console.log('AR.js scene loading...');
             
-            // Hide loading screen after a short delay
-            setTimeout(() => {
-                document.getElementById('loading').classList.add('hidden');
-            }, 2000);
+            // Check camera permissions first
+            const cameraReady = await checkCameraPermissions();
             
-            // Add marker detection events
-            const marker = document.getElementById('hiro-marker');
-            
-            marker.addEventListener('markerFound', function() {
-                console.log('Hiro marker detected!');
-                showNotification('🎯 Hiro marker detected!', 'success');
-            });
-            
-            marker.addEventListener('markerLost', function() {
-                console.log('Hiro marker lost');
-                showNotification('❌ Marker lost - keep it in view', 'warning');
-            });
+            if (cameraReady) {
+                // Add marker detection events
+                const marker = document.getElementById('hiro-marker');
+                
+                marker.addEventListener('markerFound', function() {
+                    console.log('Hiro marker detected!');
+                    showNotification('🎯 Hiro marker detected!', 'success');
+                    document.getElementById('status-bar').textContent = '🎯 Marker detected!';
+                });
+                
+                marker.addEventListener('markerLost', function() {
+                    console.log('Hiro marker lost');
+                    showNotification('❌ Marker lost - keep it in view', 'warning');
+                    document.getElementById('status-bar').textContent = '✅ Camera ready - Point at Hiro marker';
+                });
+                
+                // Add AR.js events
+                document.addEventListener('arjs-nft-loaded', function(evt) {
+                    console.log('NFT marker loaded', evt);
+                });
+                
+                document.addEventListener('arjs-marker-found', function(evt) {
+                    console.log('Marker found', evt);
+                });
+                
+                document.addEventListener('arjs-camera-init', function(evt) {
+                    console.log('AR.js camera initialized', evt);
+                });
+                
+                document.addEventListener('arjs-camera-error', function(evt) {
+                    console.error('AR.js camera error', evt);
+                    showNotification('❌ AR.js camera error', 'warning');
+                });
+            }
         });
         
         // Toggle between default cube and GLB model
@@ -297,7 +500,7 @@
             notification.textContent = message;
             notification.style.cssText = `
                 position: fixed;
-                top: 80px;
+                top: 120px;
                 left: 50%;
                 transform: translateX(-50%);
                 background: ${type === 'success' ? 'rgba(76, 175, 80, 0.9)' : 
@@ -319,15 +522,6 @@
                 }
             }, 3000);
         }
-        
-        // Handle AR.js errors
-        window.addEventListener('arjs-nft-loaded', function(evt) {
-            console.log('NFT marker loaded', evt);
-        });
-        
-        window.addEventListener('arjs-marker-found', function(evt) {
-            console.log('Marker found', evt);
-        });
         
         // Add touch gestures for mobile
         let touchStartY = 0;
@@ -359,6 +553,13 @@
                 } else {
                     resetScene();
                 }
+            }
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
             }
         });
         
