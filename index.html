@@ -81,6 +81,81 @@
     </a-scene>
 
     <script>
+        let cameraStream = null;
+        
+        // Check camera permissions and availability
+        async function checkCameraPermissions() {
+            try {
+                // Check if getUserMedia is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera API not supported in this browser');
+                }
+                
+                // Check permissions
+                if (navigator.permissions && navigator.permissions.query) {
+                    const permission = await navigator.permissions.query({ name: 'camera' });
+                    if (permission.state === 'denied') {
+                        throw new Error('Camera permission denied. Please enable camera access in your browser settings.');
+                    }
+                }
+                
+                // Request camera access
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', // Use back camera if available
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                
+                cameraStream = stream;
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                alert(`Camera Access Error: ${error.message}\n\nSolutions:\n- Allow camera access when prompted\n- Check browser camera permissions\n- Use HTTPS (required for camera)\n- Try refreshing the page`);
+                return false;
+            }
+        }
+        
+        // Initialize AR scene
+        window.addEventListener('load', async function() {
+            console.log('AR.js scene loading...');
+            
+            // Check camera permissions first
+            const cameraReady = await checkCameraPermissions();
+            
+            if (cameraReady) {
+                // Add marker detection events
+                const marker = document.querySelector('a-marker');
+                
+                marker.addEventListener('markerFound', function() {
+                    console.log('Hiro marker detected!');
+                });
+                
+                marker.addEventListener('markerLost', function() {
+                    console.log('Hiro marker lost');
+                });
+                
+                // Add AR.js events
+                document.addEventListener('arjs-camera-init', function(evt) {
+                    console.log('AR.js camera initialized', evt);
+                });
+                
+                document.addEventListener('arjs-camera-error', function(evt) {
+                    console.error('AR.js camera error', evt);
+                });
+            }
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+        });
+        
         console.log('🎯 Simple AR Scanner loaded');
         console.log('📱 Point camera at Hiro marker to see 3D model');
     </script>
