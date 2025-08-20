@@ -13,6 +13,8 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
+            background: #000;
+            color: white;
         }
         
         .info {
@@ -47,12 +49,34 @@
         .marker-link:hover {
             text-decoration: underline;
         }
+        
+        /* Camera Preview */
+        .camera-preview {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        #camera-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
     <div class="info">
         <h2>🎯 AR Scanner</h2>
         <p>Point camera at <a href="https://ar-js-org.github.io/AR.js/data/images/hiro.png" target="_blank" class="marker-link">Hiro marker</a></p>
+    </div>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview">
+        <video id="camera-video" autoplay muted playsinline></video>
     </div>
 
     <a-scene
@@ -108,6 +132,13 @@
                 
                 cameraStream = stream;
                 
+                // Show camera feed in video element
+                const videoElement = document.getElementById('camera-video');
+                if (videoElement) {
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+                }
+                
                 return true;
                 
             } catch (error) {
@@ -159,4 +190,3 @@
     </script>
 </body>
 </html>
-
