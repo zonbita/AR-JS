@@ -1,517 +1,369 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer - XAMPP Offline</title>
+    <title>AR.js - Hiro Marker Scanner</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://raw.githack.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
+    
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
+            font-family: Arial, sans-serif;
+            background: #000;
             color: white;
         }
         
-        .header {
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .header h1 {
-            font-size: 24px;
-            font-weight: 300;
-            margin: 0;
-        }
-        
-        .subtitle {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-        
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            min-height: calc(100vh - 120px);
-            justify-content: center;
-        }
-        
-        .viewer-container {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-        }
-        
-        .canvas-area {
-            width: 100%;
-            height: 300px;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
-            background-size: 400% 400%;
-            animation: gradientShift 8s ease infinite;
-            border-radius: 15px;
-            position: relative;
-            overflow: hidden;
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        .model-3d {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            transform-style: preserve-3d;
-            animation: float 4s ease-in-out infinite;
-        }
-        
-        .cube {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            transform-style: preserve-3d;
-            animation: rotate3d 12s linear infinite;
-            left: 50%;
-            top: 50%;
-            margin: -50px 0 0 -50px;
-        }
-        
-        .cube-face {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            background: rgba(255,255,255,0.8);
-            border: 2px solid #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            backdrop-filter: blur(5px);
-        }
-        
-        .front { transform: rotateY(0deg) translateZ(50px); }
-        .back { transform: rotateY(180deg) translateZ(50px); }
-        .right { transform: rotateY(90deg) translateZ(50px); }
-        .left { transform: rotateY(-90deg) translateZ(50px); }
-        .top { transform: rotateX(90deg) translateZ(50px); }
-        .bottom { transform: rotateX(-90deg) translateZ(50px); }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotateX(0deg); }
-            50% { transform: translateY(-20px) rotateX(5deg); }
-        }
-        
-        @keyframes rotate3d {
-            0% { transform: translateX(-50px) translateY(-50px) rotateX(0deg) rotateY(0deg); }
-            25% { transform: translateX(-50px) translateY(-50px) rotateX(90deg) rotateY(90deg); }
-            50% { transform: translateX(-50px) translateY(-50px) rotateX(180deg) rotateY(180deg); }
-            75% { transform: translateX(-50px) translateY(-50px) rotateX(270deg) rotateY(270deg); }
-            100% { transform: translateX(-50px) translateY(-50px) rotateX(360deg) rotateY(360deg); }
-        }
-        
-        .model-info {
-            background: rgba(0,0,0,0.3);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            font-size: 14px;
-        }
-        
-        .controls {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-        
-        .control-btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 20px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        
-        .control-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            background: linear-gradient(45deg, #764ba2, #667eea);
-        }
-        
-        .control-btn:active {
-            transform: translateY(0);
-        }
-        
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 30px;
-            max-width: 800px;
-        }
-        
-        .feature-card {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .feature-icon {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-        
-        .feature-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .feature-desc {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-        
-        .footer {
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            text-align: center;
-            margin-top: 30px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .notification {
+        .ar-info {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
             padding: 15px 25px;
             border-radius: 25px;
-            color: white;
-            font-weight: bold;
+            text-align: center;
             z-index: 1000;
-            opacity: 0;
-            animation: slideIn 0.5s ease forwards;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
-        .notification.success { background: linear-gradient(45deg, #4CAF50, #45a049); }
-        .notification.info { background: linear-gradient(45deg, #2196F3, #1976D2); }
-        .notification.warning { background: linear-gradient(45deg, #FF9800, #F57C00); }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
+        .ar-info h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #4CAF50;
         }
         
-        @media (max-width: 768px) {
-            .main-container {
-                padding: 10px;
-            }
-            
-            .viewer-container {
-                padding: 20px;
-            }
-            
-            .canvas-area {
-                height: 250px;
-            }
-            
-            .cube {
-                width: 80px;
-                height: 80px;
-                margin: -40px 0 0 -40px;
-            }
-            
-            .cube-face {
-                width: 80px;
-                height: 80px;
-                font-size: 32px;
-            }
-            
-            .front, .back { transform: rotateY(0deg) translateZ(40px); }
-            .back { transform: rotateY(180deg) translateZ(40px); }
-            .right { transform: rotateY(90deg) translateZ(40px); }
-            .left { transform: rotateY(-90deg) translateZ(40px); }
-            .top { transform: rotateX(90deg) translateZ(40px); }
-            .bottom { transform: rotateX(-90deg) translateZ(40px); }
-            
-            .controls {
-                gap: 8px;
-            }
-            
-            .control-btn {
-                padding: 10px 16px;
-                font-size: 12px;
-                flex: 1;
-                min-width: 80px;
-            }
+        .ar-info p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .marker-info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 25px;
+            border-radius: 25px;
+            text-align: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .marker-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #2196F3;
+        }
+        
+        .marker-info p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .loading h3 {
+            margin: 0 0 15px 0;
+            color: #FF9800;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .control-btn {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🎮 3D Model Viewer</h1>
-        <div class="subtitle">XAMPP Offline Version - Không cần Internet</div>
+    <div class="ar-info">
+        <h2>🎯 AR Scanner Active</h2>
+        <p>Point your camera at the Hiro marker</p>
     </div>
     
-    <div class="main-container">
-        <div class="viewer-container">
-            <h2>🦆 Demo Model</h2>
-            
-            <div class="canvas-area" id="canvas-area">
-                <div class="model-3d">
-                    <div class="cube" id="cube">
-                        <div class="cube-face front">🦆</div>
-                        <div class="cube-face back">📦</div>
-                        <div class="cube-face right">🎮</div>
-                        <div class="cube-face left">🚀</div>
-                        <div class="cube-face top">⭐</div>
-                        <div class="cube-face bottom">💎</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="model-info">
-                <strong>📋 Thông tin Model:</strong><br>
-                Tên: <span id="model-name">Animated Cube</span><br>
-                Kích thước: <span id="model-scale">1.0x</span><br>
-                Góc xoay: <span id="model-rotation">0°</span>
-            </div>
-            
-            <div class="controls">
-                <button class="control-btn" onclick="rotateModel()">🔄 Xoay</button>
-                <button class="control-btn" onclick="scaleModel()">📏 Zoom</button>
-                <button class="control-btn" onclick="changeColor()">🎨 Màu</button>
-                <button class="control-btn" onclick="changeModel()">🔄 Model</button>
-                <button class="control-btn" onclick="resetModel()">⚡ Reset</button>
-            </div>
-        </div>
-        
-        <div class="features">
-            <div class="feature-card">
-                <div class="feature-icon">🎯</div>
-                <div class="feature-title">Offline Ready</div>
-                <div class="feature-desc">Hoạt động hoàn toàn offline trên XAMPP</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📱</div>
-                <div class="feature-title">Responsive</div>
-                <div class="feature-desc">Tương thích mọi thiết bị mobile & desktop</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <div class="feature-title">Fast Loading</div>
-                <div class="feature-desc">Tải nhanh, không cần thư viện external</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🎮</div>
-                <div class="feature-title">Interactive</div>
-                <div class="feature-desc">Điều khiển mô hình với các nút bấm</div>
-            </div>
-        </div>
+    <div class="marker-info">
+        <h3>📱 Hiro Marker</h3>
+        <p>Show this image to your camera: <a href="https://ar-js-org.github.io/AR.js/data/images/hiro.png" target="_blank" style="color: #4CAF50;">Download Marker</a></p>
     </div>
     
-    <div class="footer">
-        <p>🚀 <strong>XAMPP 3D Model Viewer</strong> - Phiên bản demo offline</p>
-        <p style="font-size: 12px; opacity: 0.8; margin-top: 5px;">
-            Để sử dụng AR thực, cần deploy lên HTTPS server và sử dụng AR.js
-        </p>
+    <div class="controls">
+        <button class="control-btn" onclick="toggleModel()">🔄 Toggle Model</button>
+        <button class="control-btn" onclick="changeModel()">🎨 Change Model</button>
+        <button class="control-btn" onclick="resetScene()">⚡ Reset</button>
+    </div>
+    
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <h3>Loading AR Scene...</h3>
+        <p>Please wait while we initialize the AR experience</p>
     </div>
 
+    <a-scene
+        vr-mode-ui="enabled: false"
+        embedded
+        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
+        renderer="logarithmicDepthBuffer: true;"
+        vr-mode-ui="enabled: false">
+
+        <!-- Hiro Marker -->
+        <a-marker preset="hiro" id="hiro-marker">
+            <!-- 3D Model Container -->
+            <a-entity id="model-container" position="0 0 0" scale="1 1 1">
+                <!-- Default Cube Model -->
+                <a-box 
+                    id="default-model"
+                    position="0 0.5 0" 
+                    width="1" 
+                    height="1" 
+                    depth="1" 
+                    color="#4CAF50"
+                    material="opacity: 0.8"
+                    animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
+                </a-box>
+                
+                <!-- GLB Model (will be loaded dynamically) -->
+                <a-entity 
+                    id="glb-model"
+                    position="0 0 0" 
+                    scale="1 1 1"
+                    gltf-model=""
+                    visible="false">
+                </a-entity>
+            </a-entity>
+            
+            <!-- Text Label -->
+            <a-text 
+                value="Hiro Marker Detected!" 
+                position="0 1.5 0" 
+                align="center" 
+                color="#FFFFFF" 
+                font="kelsonsans"
+                scale="0.5 0.5 0.5">
+            </a-text>
+        </a-marker>
+
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+        
+        <!-- Lighting -->
+        <a-light type="ambient" color="#FFFFFF" intensity="0.6"></a-light>
+        <a-light type="directional" position="0 10 5" color="#FFFFFF" intensity="0.8"></a-light>
+    </a-scene>
+
     <script>
-        let currentRotation = 0;
-        let currentScale = 1.0;
-        let currentColorIndex = 0;
         let currentModelIndex = 0;
+        let isModelVisible = true;
         
-        const colors = [
-            'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4)',
-            'linear-gradient(45deg, #667eea, #764ba2)',
-            'linear-gradient(45deg, #f093fb, #f5576c)',
-            'linear-gradient(45deg, #4facfe, #00f2fe)',
-            'linear-gradient(45deg, #43e97b, #38f9d7)'
+        // Sample GLB models (you can replace these with your own)
+        const glbModels = [
+            'https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf',
+            'https://threejs.org/examples/models/gltf/Flamingo/glTF/Flamingo.gltf',
+            'https://threejs.org/examples/models/gltf/Parrot/glTF/Parrot.gltf',
+            'https://threejs.org/examples/models/gltf/Stork/glTF/Stork.gltf'
         ];
         
-        const models = [
-            { name: 'Animated Cube', icons: ['🦆', '📦', '🎮', '🚀', '⭐', '💎'] },
-            { name: 'Emoji Box', icons: ['😀', '😎', '🤖', '🎨', '🎵', '🌟'] },
-            { name: 'Nature Cube', icons: ['🌳', '🌊', '🔥', '🌙', '☀️', '🌍'] },
-            { name: 'Animal Box', icons: ['🐱', '🐶', '🦊', '🐯', '🦁', '🐼'] }
-        ];
-        
-        // Khởi tạo
+        // Initialize AR scene
         window.addEventListener('load', function() {
-            showNotification('🎮 3D Model Viewer đã sẵn sàng!', 'success');
-            updateModelInfo();
+            console.log('AR.js scene loaded');
+            
+            // Hide loading screen after a short delay
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 2000);
+            
+            // Add marker detection events
+            const marker = document.getElementById('hiro-marker');
+            
+            marker.addEventListener('markerFound', function() {
+                console.log('Hiro marker detected!');
+                showNotification('🎯 Hiro marker detected!', 'success');
+            });
+            
+            marker.addEventListener('markerLost', function() {
+                console.log('Hiro marker lost');
+                showNotification('❌ Marker lost - keep it in view', 'warning');
+            });
         });
         
-        function rotateModel() {
-            currentRotation += 45;
-            const cube = document.getElementById('cube');
-            cube.style.transform = `translateX(-50px) translateY(-50px) rotateX(${currentRotation}deg) rotateY(${currentRotation}deg)`;
-            updateModelInfo();
-            showNotification(`🔄 Xoay ${currentRotation % 360}°`, 'info');
+        // Toggle between default cube and GLB model
+        function toggleModel() {
+            const defaultModel = document.getElementById('default-model');
+            const glbModel = document.getElementById('glb-model');
+            
+            if (isModelVisible) {
+                defaultModel.setAttribute('visible', false);
+                glbModel.setAttribute('visible', true);
+                showNotification('🎨 Switched to GLB model', 'info');
+            } else {
+                defaultModel.setAttribute('visible', true);
+                glbModel.setAttribute('visible', false);
+                showNotification('🎨 Switched to default cube', 'info');
+            }
+            
+            isModelVisible = !isModelVisible;
         }
         
-        function scaleModel() {
-            currentScale = currentScale >= 2 ? 0.5 : currentScale + 0.25;
-            const cube = document.getElementById('cube');
-            cube.style.transform += ` scale(${currentScale})`;
-            updateModelInfo();
-            showNotification(`📏 Tỷ lệ: ${currentScale}x`, 'info');
-        }
-        
-        function changeColor() {
-            currentColorIndex = (currentColorIndex + 1) % colors.length;
-            const canvasArea = document.getElementById('canvas-area');
-            canvasArea.style.background = colors[currentColorIndex];
-            canvasArea.style.backgroundSize = '400% 400%';
-            showNotification(`🎨 Đã đổi màu nền`, 'info');
-        }
-        
+        // Change GLB model
         function changeModel() {
-            currentModelIndex = (currentModelIndex + 1) % models.length;
-            const currentModel = models[currentModelIndex];
-            const faces = document.querySelectorAll('.cube-face');
+            const glbModel = document.getElementById('glb-model');
+            currentModelIndex = (currentModelIndex + 1) % glbModels.length;
             
-            faces.forEach((face, index) => {
-                face.textContent = currentModel.icons[index];
-            });
+            const newModelUrl = glbModels[currentModelIndex];
+            glbModel.setAttribute('gltf-model', newModelUrl);
             
-            document.getElementById('model-name').textContent = currentModel.name;
-            showNotification(`🔄 Chuyển sang: ${currentModel.name}`, 'success');
+            showNotification(`🔄 Changed to model ${currentModelIndex + 1}`, 'info');
         }
         
-        function resetModel() {
-            currentRotation = 0;
-            currentScale = 1.0;
-            currentColorIndex = 0;
-            currentModelIndex = 0;
+        // Reset scene
+        function resetScene() {
+            const defaultModel = document.getElementById('default-model');
+            const glbModel = document.getElementById('glb-model');
             
-            const cube = document.getElementById('cube');
-            const canvasArea = document.getElementById('canvas-area');
+            defaultModel.setAttribute('visible', true);
+            glbModel.setAttribute('visible', false);
+            isModelVisible = true;
             
-            cube.style.transform = 'translateX(-50px) translateY(-50px) rotateX(0deg) rotateY(0deg) scale(1)';
-            canvasArea.style.background = colors[0];
+            // Reset model rotation
+            defaultModel.setAttribute('rotation', '0 0 0');
             
-            // Reset model
-            const faces = document.querySelectorAll('.cube-face');
-            const defaultIcons = models[0].icons;
-            faces.forEach((face, index) => {
-                face.textContent = defaultIcons[index];
-            });
-            
-            updateModelInfo();
-            showNotification('⚡ Đã reset tất cả!', 'success');
+            showNotification('⚡ Scene reset!', 'success');
         }
         
-        function updateModelInfo() {
-            document.getElementById('model-name').textContent = models[currentModelIndex].name;
-            document.getElementById('model-scale').textContent = currentScale + 'x';
-            document.getElementById('model-rotation').textContent = (currentRotation % 360) + '°';
-        }
-        
+        // Show notification
         function showNotification(message, type = 'info') {
-            // Xóa notification cũ
+            // Remove existing notification
             const existing = document.querySelector('.notification');
             if (existing) existing.remove();
             
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? 'rgba(76, 175, 80, 0.9)' : 
+                           type === 'warning' ? 'rgba(255, 152, 0, 0.9)' : 
+                           'rgba(33, 150, 243, 0.9)'};
+                color: white;
+                padding: 10px 20px;
+                border-radius: 20px;
+                z-index: 1001;
+                font-weight: bold;
+                backdrop-filter: blur(10px);
+            `;
             
             document.body.appendChild(notification);
             
             setTimeout(() => {
                 if (notification.parentNode) {
-                    notification.style.animation = 'slideIn 0.5s ease reverse';
-                    setTimeout(() => notification.remove(), 500);
+                    notification.remove();
                 }
             }, 3000);
         }
         
-        // Touch gestures cho mobile
-        let isTouch = false;
-        let startX, startY;
-        
-        const canvasArea = document.getElementById('canvas-area');
-        
-        canvasArea.addEventListener('touchstart', function(e) {
-            isTouch = true;
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
+        // Handle AR.js errors
+        window.addEventListener('arjs-nft-loaded', function(evt) {
+            console.log('NFT marker loaded', evt);
         });
         
-        canvasArea.addEventListener('touchmove', function(e) {
-            if (!isTouch) return;
-            e.preventDefault();
+        window.addEventListener('arjs-marker-found', function(evt) {
+            console.log('Marker found', evt);
+        });
+        
+        // Add touch gestures for mobile
+        let touchStartY = 0;
+        let touchStartX = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartY = e.touches[0].clientY;
+            touchStartX = e.touches[0].clientX;
+        });
+        
+        document.addEventListener('touchend', function(e) {
+            const touchEndY = e.changedTouches[0].clientY;
+            const touchEndX = e.changedTouches[0].clientX;
             
-            const deltaX = e.touches[0].clientX - startX;
-            const deltaY = e.touches[0].clientY - startY;
+            const deltaY = touchStartY - touchEndY;
+            const deltaX = touchStartX - touchEndX;
             
-            if (Math.abs(deltaX) > 30) {
-                rotateModel();
-                isTouch = false;
-            } else if (Math.abs(deltaY) > 30) {
-                scaleModel();
-                isTouch = false;
+            // Swipe up/down to toggle model
+            if (Math.abs(deltaY) > 50 && Math.abs(deltaY) > Math.abs(deltaX)) {
+                if (deltaY > 0) {
+                    toggleModel();
+                }
+            }
+            
+            // Swipe left/right to change model
+            if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (deltaX > 0) {
+                    changeModel();
+                } else {
+                    resetScene();
+                }
             }
         });
         
-        canvasArea.addEventListener('touchend', function() {
-            isTouch = false;
-        });
-        
-        // Click để xoay
-        canvasArea.addEventListener('click', function() {
-            rotateModel();
-        });
-        
-        console.log('🎮 3D Model Viewer XAMPP Version loaded successfully!');
+        console.log('🎯 AR.js Hiro Marker Scanner loaded successfully!');
+        console.log('📱 Point your camera at the Hiro marker to see the 3D model');
     </script>
 </body>
 </html>
