@@ -13,7 +13,8 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-  
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             min-height: 100vh;
         }
         
@@ -207,6 +208,69 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
+        
+        .camera-preview {
+            position: fixed;
+            top: 120px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            z-index: 1000;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            max-width: 300px;
+        }
+        
+        .camera-preview:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        .camera-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .camera-header h4 {
+            margin: 0;
+            font-size: 14px;
+            color: #4CAF50;
+        }
+        
+        .camera-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .camera-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        #camera-video {
+            width: 100%;
+            height: 180px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            object-fit: cover;
+            display: none;
+        }
+        
+        .camera-preview.video-active #camera-video {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -225,6 +289,7 @@
         <button class="control-btn" onclick="changeModel()">🎨 Change Model</button>
         <button class="control-btn" onclick="resetScene()">⚡ Reset</button>
         <button class="control-btn" onclick="testCamera()">📷 Test Camera</button>
+        <button class="control-btn" onclick="stopCameraPreview()">⏹️ Stop Camera</button>
     </div>
     
     <div class="loading" id="loading">
@@ -235,6 +300,15 @@
 
     <div class="status-bar" id="status-bar">
         🔍 Checking camera permissions...
+    </div>
+    
+    <!-- Camera Preview -->
+    <div class="camera-preview" id="camera-preview">
+        <div class="camera-header">
+            <h4>📷 Camera Preview</h4>
+            <button class="camera-toggle" onclick="toggleCameraPreview()">👁️ Show</button>
+        </div>
+        <video id="camera-video" autoplay muted playsinline></video>
     </div>
 
     <a-scene
@@ -333,6 +407,13 @@
                 statusBar.textContent = '✅ Camera ready - Point at Hiro marker';
                 statusBar.style.background = 'rgba(76, 175, 80, 0.9)';
                 
+                // Start camera preview automatically
+                const video = document.getElementById('camera-video');
+                video.srcObject = stream;
+                document.getElementById('camera-preview').classList.add('video-active');
+                document.querySelector('.camera-toggle').textContent = '🙈 Hide';
+                document.querySelector('.camera-toggle').style.background = 'rgba(255, 255, 255, 0.4)';
+                
                 // Hide loading screen
                 setTimeout(() => {
                     document.getElementById('loading').classList.add('hidden');
@@ -425,6 +506,57 @@
                 statusBar.textContent = '❌ Camera test failed';
                 statusBar.style.background = 'rgba(244, 67, 54, 0.9)';
                 console.error('Camera test error:', error);
+            }
+        }
+        
+        // Toggle camera preview
+        function toggleCameraPreview() {
+            const preview = document.getElementById('camera-preview');
+            const video = document.getElementById('camera-video');
+            const toggleBtn = document.querySelector('.camera-toggle');
+            
+            if (preview.classList.contains('video-active')) {
+                // Hide video
+                preview.classList.remove('video-active');
+                toggleBtn.textContent = '👁️ Show';
+                toggleBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+            } else {
+                // Show video
+                preview.classList.add('video-active');
+                toggleBtn.textContent = '🙈 Hide';
+                toggleBtn.style.background = 'rgba(255, 255, 255, 0.4)';
+                
+                // Start camera if not already running
+                if (!cameraStream) {
+                    startCameraPreview();
+                }
+            }
+        }
+        
+        // Start camera preview
+        async function startCameraPreview() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+                
+                const video = document.getElementById('camera-video');
+                video.srcObject = stream;
+                
+                // Store the stream for cleanup
+                if (!cameraStream) {
+                    cameraStream = stream;
+                }
+                
+                console.log('Camera preview started');
+                
+            } catch (error) {
+                console.error('Failed to start camera preview:', error);
+                showNotification('❌ Camera preview failed', 'warning');
             }
         }
         
@@ -581,6 +713,26 @@
                 }
             }
         });
+        
+        // Stop camera preview
+        function stopCameraPreview() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                
+                const video = document.getElementById('camera-video');
+                video.srcObject = null;
+                
+                const preview = document.getElementById('camera-preview');
+                preview.classList.remove('video-active');
+                
+                const toggleBtn = document.querySelector('.camera-toggle');
+                toggleBtn.textContent = '👁️ Show';
+                toggleBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+                
+                console.log('Camera preview stopped');
+            }
+        }
         
         // Cleanup on page unload
         window.addEventListener('beforeunload', function() {
