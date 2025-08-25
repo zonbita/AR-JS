@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tap‑to‑Place AR (iPhone + Android) — AR Animation Only</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- Using public sample assets so the page doesn't 404 in the sandbox -->
-  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" type="model/vnd.usdz+zip" crossorigin>
+  <!-- Using RobotExpressive model which has multiple animations -->
+  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz" type="model/vnd.usdz+zip" crossorigin>
   <style>
     html, body { height: 100%; margin: 0; }
     body { font-family: system-ui, sans-serif; background:#0b0c10; color:#eee; }
@@ -27,9 +27,9 @@
   -->
   <model-viewer
     id="viewer"
-    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
-    ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
-    alt="Astronaut"
+    src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
+    ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
+    alt="Animated Robot"
     ar
     ar-modes="webxr scene-viewer quick-look"
     ar-placement="floor"
@@ -120,14 +120,30 @@
     // Animation control functions
     function startAnimation() {
       try {
-        if (mv.availableAnimations && mv.availableAnimations.length > 0) {
-          // Play all available animations or just the first one
-          mv.animationName = mv.availableAnimations[0];
-          mv.play();
-          log('Animation started in AR mode: ' + mv.animationName);
-        } else {
-          log('No animations available to play');
-        }
+        // Wait a moment for model to be fully loaded
+        setTimeout(() => {
+          if (mv.availableAnimations && mv.availableAnimations.length > 0) {
+            // Use a default animation or the first available one
+            const animToPlay = mv.availableAnimations.includes('Dance') ? 'Dance' : 
+                              mv.availableAnimations.includes('Wave') ? 'Wave' :
+                              mv.availableAnimations[0];
+            
+            mv.animationName = animToPlay;
+            mv.play();
+            log('Animation started in AR mode: ' + animToPlay);
+            log('All available animations: ' + JSON.stringify(mv.availableAnimations));
+          } else {
+            log('No animations available to play. Available:', mv.availableAnimations);
+            // Force check again after a delay
+            setTimeout(() => {
+              if (mv.availableAnimations && mv.availableAnimations.length > 0) {
+                mv.animationName = mv.availableAnimations[0];
+                mv.play();
+                log('Delayed animation start: ' + mv.animationName);
+              }
+            }, 500);
+          }
+        }, 200);
       } catch (e) {
         log('Error starting animation:', e?.message || e);
       }
@@ -137,7 +153,6 @@
       try {
         mv.pause();
         mv.currentTime = 0; // Reset to beginning
-        mv.animationName = null;
         log('Animation stopped - exited AR mode');
       } catch (e) {
         log('Error stopping animation:', e?.message || e);
@@ -180,7 +195,7 @@
         log('navigator.xr not available');
       }
 
-      log('Diagnostics complete. Animation will only play in AR mode.');
+      log('Diagnostics complete. Using RobotExpressive model with animations. Try AR mode!');
     }
 
     // wire diagnostic button
@@ -276,8 +291,17 @@
     // Additional event listeners to ensure animation control
     mv.addEventListener('load', () => {
       log('Model loaded. Available animations:', mv.availableAnimations);
-      // Ensure no animation plays on initial load
-      stopAnimation();
+      // Wait a bit for animations to be fully parsed
+      setTimeout(() => {
+        log('Delayed check - Available animations:', mv.availableAnimations);
+      }, 1000);
+    });
+
+    // Listen for when animations are ready
+    mv.addEventListener('progress', (e) => {
+      if (e.detail.totalProgress === 1) {
+        log('Model fully loaded. Animations:', mv.availableAnimations);
+      }
     });
 
     // Listen for when the model is ready in AR mode
