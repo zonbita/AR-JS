@@ -28,8 +28,6 @@
   ar-scale="auto"
   camera-controls
   shadow-intensity="1"
-  autoplay
-  loop
 >
   <a slot="ar" rel="ar" href="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz">
     <img src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" width="1" height="1" alt="Robot Preview">
@@ -39,7 +37,7 @@
 <audio id="robot-sound" src="https://raw.githubusercontent.com/zonbita/AR-JS/main/lactroi.mp3" loop></audio>
 
 <div id="overlay">
-  <div>Tap anywhere to enter AR and play music</div>
+  <div>Tap anywhere to enter AR</div>
   <p>iPhone: Safari only | Android: Chrome</p>
 </div>
 
@@ -53,55 +51,54 @@
   const isIOS = () => /(iPhone|iPad|iPod)/i.test(navigator.userAgent) && !window.MSStream;
   const isAndroid = () => /Android/i.test(navigator.userAgent);
 
-  // Play animation when model loads
-  mv.addEventListener('load', async () => {
-    await mv.updateComplete;
-    const anims = mv.availableAnimations || [];
-    if(anims.length > 0){
-      const chosen = anims.includes("Dance") ? "Dance" : anims[0];
-      mv.animationName = chosen;
-      mv.timeScale = 1;
-      mv.loop = true;
-      if(mv.play) mv.play();
-      console.log("[WEB] Animation ready:", chosen);
-    }
-  });
-
-  // Trigger AR and audio on user tap
+  // Trigger AR and audio only on user tap
   function triggerAR(){
     overlay.remove();
 
     if(isIOS() && arLink && arLink.href){
-      // iOS: play audio first (must be inside user gesture)
+      // Play audio in user gesture before opening Quick Look
       audio.currentTime = 0;
       audio.play().catch(()=>console.log("[iOS] Audio blocked"));
-      arLink.click(); // then open Quick Look
+      arLink.click();
       return;
     }
 
-    // Android / WebXR
     if(mv.canActivateAR){
-      mv.activateAR().catch(()=>console.log("[AR] activateAR failed"));
+      // WebXR on Android
+      mv.activateAR().catch(()=>console.log("[WebXR] activateAR failed"));
       return;
     }
+
     if(isAndroid() && mv.src){
       window.location.href = mv.src;
-      return;
     }
   }
 
   overlay.addEventListener("click", triggerAR, {once:true});
   document.addEventListener("touchstart", triggerAR, {once:true});
 
-  // WebXR: play audio when AR session starts
+  // WebXR: play animation and audio when AR session starts
   mv.addEventListener("ar-status", e=>{
-    if(e.detail.status==="session-started"){
+    if(e.detail.status === "session-started"){
       if(navigator.vibrate) navigator.vibrate(20);
+
+      // Play animation
+      const anims = mv.availableAnimations || [];
+      if(anims.length > 0){
+        const chosen = anims.includes("Dance") ? "Dance" : anims[0];
+        mv.animationName = chosen;
+        mv.timeScale = 1;
+        mv.loop = true;
+        if(mv.play) mv.play();
+      }
+
+      // Play audio
       audio.currentTime = 0;
       audio.play().catch(()=>console.log("[WebXR] Audio blocked"));
     } else if(e.detail.status==="not-presenting" || e.detail.status==="failed"){
       audio.pause();
       audio.currentTime = 0;
+      try{ mv.pause(); mv.currentTime=0;} catch(e){}
     }
   });
 })();
