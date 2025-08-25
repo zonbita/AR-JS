@@ -3,17 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tap-to-Place AR (iPhone + Android) — Anim + Sound</title>
+  <title>AR Anim + Multi Sound (Auto Start)</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     html, body { height: 100%; margin: 0; }
     body { font-family: system-ui, sans-serif; background:#0b0c10; color:#eee; }
     model-viewer { width: 100%; height: 100vh; --poster-color: #0b0c10; }
     .controls { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 3; display:flex; gap:8px; }
-    .controls button, .controls a { padding: 10px 14px; border-radius: 999px; border: none; background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.25); text-decoration:none; }
-    .controls .secondary { background: rgba(255,255,255,.06); color:#e6edf3; box-shadow:none; border:1px solid rgba(255,255,255,.06); }
+    .controls button { padding: 10px 14px; border-radius: 999px; border: none; background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
     .diag { position: fixed; right: 10px; bottom: 10px; font-size: 12px; color:#cbd5e1; opacity:.95; max-width: 46vw; background: rgba(0,0,0,0.45); padding:8px 10px; border-radius:8px; }
-    .notes { position: fixed; left: 10px; bottom: 10px; font-size: 12px; color:#9aa1a9; max-width: 46vw; }
   </style>
 </head>
 <body>
@@ -27,97 +25,81 @@
     ar-placement="floor"
     ar-scale="fixed"
     camera-controls
-    autoplay
-    animation-name="*"
-    animation-loop
     tone-mapping="aces"
     shadow-intensity="1"
-    interaction-prompt="auto"
+    autoplay
+    animation-loop
   >
     <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
     <button slot="ar-button" id="arButton">View in your space</button>
   </model-viewer>
 
-  <!-- Sound file (replace with your own .mp3/.wav URL) -->
-  <audio id="modelSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_5f2f9d.mp3?filename=space-ambient-110624.mp3" preload="auto"></audio>
+  <!-- Reusable audio element -->
+  <audio id="modelSound" preload="auto"></audio>
 
   <div class="controls">
     <button id="btnAR" type="button">View in your space</button>
-    <button id="btnDiag" class="secondary" type="button">Run diagnostics</button>
-    <a id="manualScene" class="secondary" href="#">Open Scene Viewer</a>
   </div>
-
-  <div class="diag" id="diag">Initializing…</div>
-  <div class="notes">Notes: Replace the <code>src</code>/<code>ios-src</code> with your own HTTPS-hosted GLB/USDZ, and <code>modelSound</code> with your audio file.</div>
+  <div class="diag" id="diag">Loading…</div>
 
   <script>
   (async function init() {
-    const mv = document.getElementById('viewer');
-    const btnAR = document.getElementById('btnAR');
-    const btnDiag = document.getElementById('btnDiag');
-    const manualScene = document.getElementById('manualScene');
-    const platformArLink = document.getElementById('platformArLink');
-    const diag = document.getElementById('diag');
-    const sound = document.getElementById('modelSound');
+    const mv = document.getElementById("viewer");
+    const sound = document.getElementById("modelSound");
+    const diag = document.getElementById("diag");
 
-    const isAndroid = () => /Android/i.test(navigator.userAgent);
-    const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    // Map animation names → audio files
+    const animSounds = {
+      "Idle": "https://cdn.pixabay.com/download/audio/2021/10/20/audio_888d2.mp3?filename=ambient-space-11077.mp3",
+      "Walk": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_35f9e.mp3?filename=footsteps-snow-11098.mp3",
+      "Wave": "https://cdn.pixabay.com/download/audio/2022/03/09/audio_9d1a9.mp3?filename=whoosh-11020.mp3",
+      "*":   "https://cdn.pixabay.com/download/audio/2022/03/15/audio_5f2f9d.mp3?filename=space-ambient-110624.mp3" // fallback
+    };
 
     function log(msg) {
-      console.log('[AR Debug]', msg);
+      console.log("[AR Debug]", msg);
       diag.textContent = msg;
     }
 
-    // Sync animation + sound when model loads
-    mv.addEventListener("load", () => {
-      mv.play({repetitions: Infinity}); 
-      sound.currentTime = 0;
+    function playSoundFor(anim) {
+      const src = animSounds[anim] || animSounds["*"];
+      if (sound.src !== src) {
+        sound.pause();
+        sound.src = src;
+        sound.currentTime = 0;
+      }
       sound.loop = true;
-      sound.play().catch(err => {
-        console.log("Autoplay blocked until user interaction", err);
-      });
+      sound.play().catch(err => log("Autoplay blocked until gesture: " + err));
+    }
+
+    // When model finishes loading → start animation + sound
+    mv.addEventListener("load", () => {
+      const allAnims = mv.availableAnimations || [];
+      const firstAnim = allAnims.length ? allAnims[0] : "*";
+
+      log("Model loaded. Starting animation: " + firstAnim);
+
+      mv.animationName = firstAnim;
+      mv.play({ repetitions: Infinity });
+
+      playSoundFor(firstAnim);
     });
 
-    // Pause sound when AR session closes
+    // Listen for animation changes
+    mv.addEventListener("animation-change", (e) => {
+      const anim = e.detail.name || "*";
+      log("Animation changed: " + anim);
+      playSoundFor(anim);
+    });
+
+    // Stop sound when AR ends
     mv.addEventListener("ar-status", (e) => {
       if (e.detail.status === "not-presenting") {
         sound.pause();
       }
     });
 
-    // Diagnostics button
-    btnDiag.addEventListener("click", () => {
-      log("UserAgent: " + navigator.userAgent);
-    });
-
-    // Open manual scene link
-    manualScene.addEventListener("click", () => {
-      log("Manual Scene Viewer link clicked");
-    });
-
-    // AR launch
-    btnAR.addEventListener("click", async (ev) => {
-      ev.preventDefault();
-      log("AR button clicked");
-      try {
-        if (mv.canActivateAR) {
-          await mv.activateAR();
-        } else if (isIOS() && platformArLink?.href) {
-          platformArLink.click();
-        } else if (isAndroid()) {
-          window.open(
-            `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(mv.src)}&mode=ar_preferred&title=${encodeURIComponent(mv.alt)}`,
-            "_self"
-          );
-        } else {
-          log("AR not supported on this device.");
-        }
-      } catch (err) {
-        log("AR launch error: " + err);
-      }
-    });
-
-    log("Ready. Tap 'View in your space' to test AR.");
+    log("Ready. Model will auto-play animation + sound when loaded.");
   })();
   </script>
 </body>
