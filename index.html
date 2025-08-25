@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AR Anim + Multi Sound (Auto Start)</title>
+  <title>AR Anim + Multi Sound (Working)</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     html, body { height: 100%; margin: 0; }
@@ -17,24 +17,24 @@
 <body>
   <model-viewer
     id="viewer"
-    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
-    ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
-    alt="Astronaut"
+    src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
+    ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
+    alt="Robot"
     ar
     ar-modes="webxr scene-viewer quick-look"
     ar-placement="floor"
     ar-scale="fixed"
     camera-controls
-    tone-mapping="aces"
-    shadow-intensity="1"
     autoplay
     animation-loop
+    shadow-intensity="1"
+    tone-mapping="aces"
   >
     <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
     <button slot="ar-button" id="arButton">View in your space</button>
   </model-viewer>
 
-  <!-- Reusable audio element -->
+  <!-- One reusable audio element -->
   <audio id="modelSound" preload="auto"></audio>
 
   <div class="controls">
@@ -48,12 +48,12 @@
     const sound = document.getElementById("modelSound");
     const diag = document.getElementById("diag");
 
-    // Map animation names → audio files
+    // Map animations → sounds
     const animSounds = {
+      "Dance": "https://cdn.pixabay.com/download/audio/2021/12/20/audio_b3b52.mp3?filename=funky-drum-beat-12783.mp3",
       "Idle": "https://cdn.pixabay.com/download/audio/2021/10/20/audio_888d2.mp3?filename=ambient-space-11077.mp3",
-      "Walk": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_35f9e.mp3?filename=footsteps-snow-11098.mp3",
       "Wave": "https://cdn.pixabay.com/download/audio/2022/03/09/audio_9d1a9.mp3?filename=whoosh-11020.mp3",
-      "*":   "https://cdn.pixabay.com/download/audio/2022/03/15/audio_5f2f9d.mp3?filename=space-ambient-110624.mp3" // fallback
+      "*": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_5f2f9d.mp3?filename=space-ambient-110624.mp3"
     };
 
     function log(msg) {
@@ -69,10 +69,10 @@
         sound.currentTime = 0;
       }
       sound.loop = true;
-      sound.play().catch(err => log("Autoplay blocked until gesture: " + err));
+      sound.play().catch(err => log("Autoplay blocked: " + err));
     }
 
-    // When model finishes loading → start animation + sound
+    // Start anim + sound when model loads
     mv.addEventListener("load", () => {
       const allAnims = mv.availableAnimations || [];
       const firstAnim = allAnims.length ? allAnims[0] : "*";
@@ -81,25 +81,24 @@
 
       mv.animationName = firstAnim;
       mv.play({ repetitions: Infinity });
-
       playSoundFor(firstAnim);
     });
 
-    // Listen for animation changes
+    // Change sound if animation changes
     mv.addEventListener("animation-change", (e) => {
       const anim = e.detail.name || "*";
       log("Animation changed: " + anim);
       playSoundFor(anim);
     });
 
-    // Stop sound when AR ends
+    // Stop sound when AR closes
     mv.addEventListener("ar-status", (e) => {
       if (e.detail.status === "not-presenting") {
         sound.pause();
       }
     });
 
-    log("Ready. Model will auto-play animation + sound when loaded.");
+    log("Ready. Model will auto-play animation + sound.");
   })();
   </script>
 </body>
