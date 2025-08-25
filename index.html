@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AR Robot Animation Demo</title>
+  <title>iOS AR Quick Look</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     html, body { margin:0; height:100%; background:#0b0c10; }
@@ -12,24 +12,26 @@
       position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
       padding: 12px 20px; border:none; border-radius:999px;
       background:#2563eb; color:#fff; font-weight:600;
-      box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer;
     }
   </style>
 </head>
 <body>
 
   <model-viewer
-    id="robot"
     src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
     ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
     alt="Dancing Robot"
     ar
-    ar-modes="webxr scene-viewer quick-look"
-    ar-scale="auto"
+    ar-modes="quick-look scene-viewer webxr"
     camera-controls
     autoplay
-    animation-name="Dance"
-    shadow-intensity="1">
+    animation-name="Dance">
+
+    <!-- Đây là anchor bắt buộc cho iOS Quick Look -->
+    <a slot="ar" rel="ar" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz">
+      <img src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" alt="Robot Preview">
+    </a>
+
     <button slot="ar-button">👀 View in your space</button>
   </model-viewer>
 
