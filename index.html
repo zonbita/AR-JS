@@ -3,10 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tap‑to‑Place AR (iPhone + Android) — Fixed assets</title>
+  <title>Tap-to-Place AR (iPhone + Android)</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- Using public sample assets so the page doesn't 404 in the sandbox -->
-  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" type="model/vnd.usdz+zip" crossorigin>
   <style>
     html, body { height: 100%; margin: 0; }
     body { font-family: system-ui, sans-serif; background:#0b0c10; color:#eee; }
@@ -19,45 +17,38 @@
   </style>
 </head>
 <body>
-  <!--
-    IMPORTANT: Replace the src + ios-src below with your own hosted .glb and .usdz files
-    The sandbox 404 happened because /assets/model.glb didn't exist there. Using absolute URLs avoids that.
-  -->
-<model-viewer
-  id="viewer"
-  src="https://modelviewer.dev/assets/RobotExpressive.glb"
-  ios-src="https://modelviewer.dev/assets/RobotExpressive.usdz"
-  alt="Robot"
-  ar
-  ar-modes="webxr scene-viewer quick-look"
-  ar-placement="floor"
-  ar-scale="fixed"
-  camera-controls
-  autoplay
-  animation-loop
-  shadow-intensity="1"
-  tone-mapping="aces"
->
-    <!-- model-viewer uses an <a rel="ar"> anchor in the slot="ar" for iOS Quick Look -->
+  <model-viewer
+    id="viewer"
+    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+    ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
+    alt="Astronaut"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    ar-placement="floor"
+    ar-scale="fixed"
+    camera-controls
+    autoplay
+    animation-loop
+    tone-mapping="aces"
+    shadow-intensity="1"
+    interaction-prompt="auto"
+  >
     <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
-
-    <!-- Keep the built-in AR button inside model-viewer as a visual affordance -->
     <button slot="ar-button" id="arButton">View in your space</button>
   </model-viewer>
 
-  <div class="controls" role="region" aria-label="AR controls">
+  <div class="controls">
     <button id="btnAR" type="button">View in your space</button>
     <button id="btnDiag" class="secondary" type="button">Run diagnostics</button>
     <a id="manualScene" class="secondary" href="#">Open Scene Viewer</a>
   </div>
 
   <div class="diag" id="diag">Initializing…</div>
-  <div class="notes">Notes: This page uses public sample models so you won't get a 404. Replace the <code>src</code>/<code>ios-src</code> with your own HTTPS-hosted files for production.</div>
+  <div class="notes">This demo uses the public Astronaut model. Replace <code>src</code>/<code>ios-src</code> with your own hosted files for production.</div>
 
   <script>
   (async function init() {
     const mv = document.getElementById('viewer');
-	const sound = document.getElementById("modelSound");
     const btnAR = document.getElementById('btnAR');
     const btnDiag = document.getElementById('btnDiag');
     const manualScene = document.getElementById('manualScene');
@@ -65,7 +56,6 @@
     const diag = document.getElementById('diag');
 
     const isAndroid = () => /Android/i.test(navigator.userAgent);
-    const isChrome = () => /Chrome\//i.test(navigator.userAgent) && !/CriOS/.test(navigator.userAgent);
     const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     function log(...parts) {
@@ -74,25 +64,17 @@
       diag.textContent = text;
     }
 
-    // Wait until model-viewer is registered
-    try {
-      await customElements.whenDefined('model-viewer');
-      log('model-viewer defined');
-    } catch (e) {
-      log('Error waiting for model-viewer definition:', e?.message || e);
-    }
+    await customElements.whenDefined('model-viewer');
+    log('model-viewer ready');
 
     const glb = mv.getAttribute('src');
     const usdz = mv.getAttribute('ios-src');
 
-    // Set the Quick Look anchor href (model-viewer copies from ios-src normally, but we keep it explicit)
     if (platformArLink && usdz) {
-      try {
-        platformArLink.href = new URL(usdz, location.href).href + '#allowsContentScaling=0';
-      } catch (e) { /* ignore */ }
+      try { platformArLink.href = new URL(usdz, location.href).href + '#allowsContentScaling=0'; } catch {}
     }
 
-    // Utility: probe asset with HEAD (may be blocked by CORS on some servers)
+    // ---- Check asset URLs ----
     async function probeAsset(url) {
       try {
         const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
@@ -102,178 +84,28 @@
       }
     }
 
-    // build Scene Viewer URL
-    function sceneViewerUrlFor(glbUrl, title) {
-      const file = encodeURIComponent(new URL(glbUrl, location.href).href);
-      const t = encodeURIComponent(title || '3D Model');
-      return `https://arvr.google.com/scene-viewer/1.0?file=${file}&mode=ar_preferred&title=${t}`;
-    }
-
-    // intent fallback for older Chrome
-    function sceneViewerIntent(glbUrl, title) {
-      const file = encodeURIComponent(new URL(glbUrl, location.href).href);
-      const t = encodeURIComponent(title || '3D Model');
-      const fallback = encodeURIComponent(location.href);
-      return `intent://arvr.google.com/scene-viewer/1.0?file=${file}&mode=ar_preferred&title=${t}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
-    }
-	
-	    // Map animations → sounds
-    const animSounds = {
-      "Dance": "https://cdn.pixabay.com/download/audio/2021/12/20/audio_b3b52.mp3?filename=funky-drum-beat-12783.mp3",
-      "Idle": "https://cdn.pixabay.com/download/audio/2021/10/20/audio_888d2.mp3?filename=ambient-space-11077.mp3",
-      "Wave": "https://cdn.pixabay.com/download/audio/2022/03/09/audio_9d1a9.mp3?filename=whoosh-11020.mp3",
-      "*": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_5f2f9d.mp3?filename=space-ambient-110624.mp3"
-    };
-
-
-    function playSoundFor(anim) {
-      const src = animSounds[anim] || animSounds["*"];
-      if (sound.src !== src) {
-        sound.pause();
-        sound.src = src;
-        sound.currentTime = 0;
-      }
-      sound.loop = true;
-      sound.play().catch(err => log("Autoplay blocked: " + err));
-    }
-    // Start anim + sound when model loads
-    mv.addEventListener("load", () => {
-      const allAnims = mv.availableAnimations || [];
-      const firstAnim = allAnims.length ? allAnims[0] : "*";
-
-      log("Model loaded. Starting animation: " + firstAnim);
-
-      mv.animationName = firstAnim;
-      mv.play({ repetitions: Infinity });
-      playSoundFor(firstAnim);
-    });
-
-    // Change sound if animation changes
-    mv.addEventListener("animation-change", (e) => {
-      const anim = e.detail.name || "*";
-      log("Animation changed: " + anim);
-      playSoundFor(anim);
-    });
-
-    // Stop sound when AR closes
-    mv.addEventListener("ar-status", (e) => {
-      if (e.detail.status === "not-presenting") {
-        sound.pause();
-      }
-    });
-    // Diagnostics runner
     async function runDiagnostics() {
-      log('UserAgent: ' + navigator.userAgent);
-      if (glb) {
-        log('Probing GLB:', glb);
-        const g = await probeAsset(glb);
-        log('GLB probe: ' + JSON.stringify(g));
-      }
-      if (usdz) {
-        log('Probing USDZ:', usdz);
-        const u = await probeAsset(usdz);
-        log('USDZ probe: ' + JSON.stringify(u));
-      }
-
-      // Check model-viewer AR readiness
-      try {
-        if (typeof mv.canActivateAR !== 'undefined') log('mv.canActivateAR: ' + mv.canActivateAR);
-      } catch (e) { /* ignore */ }
-
-      // WebXR quick check
-      if (navigator.xr && navigator.xr.isSessionSupported) {
-        try {
-          const supported = await navigator.xr.isSessionSupported('immersive-ar');
-          log('navigator.xr immersive-ar supported: ' + supported);
-        } catch (err) { log('navigator.xr check error: ' + (err?.message || err)); }
-      } else {
-        log('navigator.xr not available');
-      }
-
-      log('Diagnostics complete. Try pressing "View in your space" after this message.');
+      log('Checking model URLs…');
+      if (glb) log('GLB: ' + JSON.stringify(await probeAsset(glb)));
+      if (usdz) log('USDZ: ' + JSON.stringify(await probeAsset(usdz)));
+      log('Diagnostics complete.');
     }
 
-    // wire diagnostic button
-    btnDiag.addEventListener('click', async () => {
-      await runDiagnostics();
-    });
+    btnDiag.addEventListener('click', runDiagnostics);
 
-    // Prepare manual Scene Viewer link
-    manualScene.href = glb ? sceneViewerUrlFor(glb, mv.getAttribute('alt')) : '#';
-    manualScene.addEventListener('click', (e) => {
-      // allow normal navigation; this link is useful when the automatic path fails
-      log('Manual Scene Viewer link clicked');
-    });
-
-    // Primary AR launch
-    btnAR.addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      log('AR button clicked — checking capabilities...');
-
-      try {
-        // If model-viewer can activate AR, let it (it will choose Quick Look / Scene Viewer / WebXR)
-        if (mv.canActivateAR) {
-          log('Calling model-viewer.activateAR()');
-          await mv.activateAR();
-          return;
-        }
-
-        // If on iOS, use the Quick Look anchor (some in-app browsers still block this)
-        if (isIOS()) {
-          if (platformArLink && platformArLink.href) {
-            log('Opening iOS Quick Look via anchor');
-            platformArLink.click();
-            return;
-          }
-        }
-
-        // WebXR support check
-        if (navigator.xr && navigator.xr.isSessionSupported) {
-          try {
-            const supported = await navigator.xr.isSessionSupported('immersive-ar');
-            log('navigator.xr immersive-ar supported:', supported);
-            if (supported) {
-              // model-viewer handles this, but call activateAR just in case
-              await mv.activateAR();
-              return;
-            }
-          } catch (e) {
-            log('XR isSessionSupported() error:', e?.message || e);
-          }
-        }
-
-        // Android fallback: open Scene Viewer URL (https)
-        if (isAndroid() && glb) {
-          const url = sceneViewerUrlFor(glb, mv.getAttribute('alt'));
-          log('Opening Scene Viewer (https) fallback: ' + url);
-          // Open in _self to keep gesture context
-          window.open(url, '_self');
-          return;
-        }
-
-        log('AR not available on this device/browser. Run diagnostics or use a supported browser (Safari on iOS, Chrome on Android with ARCore).');
-      } catch (err) {
-        log('AR launch error: ' + (err?.message || err));
-        // final fallback: Android intent
-        if (isAndroid() && glb) {
-          const intent = sceneViewerIntent(glb, mv.getAttribute('alt'));
-          log('Falling back to intent URL: ' + intent);
-          window.location.href = intent;
-        }
+    // --- Autoplay first animation ---
+    mv.addEventListener("load", () => {
+      const anims = mv.availableAnimations || [];
+      if (anims.length > 0) {
+        mv.animationName = anims[0];
+        log("Playing animation: " + anims[0]);
+      } else {
+        log("No animations found in this model.");
       }
     });
 
-    // model-viewer events
-    mv.addEventListener('ar-status', (e) => {
-      const { status, reason } = e.detail || {};
-      log('ar-status: ' + status + (reason ? (' | reason: ' + reason) : ''));
-      if (status === 'session-started' && navigator.vibrate) navigator.vibrate(10);
-    });
-
-    // Auto-run a quick diagnostics so user sees immediate feedback
     await runDiagnostics();
   })();
-</script>
+  </script>
 </body>
 </html>
-
