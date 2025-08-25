@@ -1,91 +1,94 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tap-to-Place AR (iPhone + Android) — Play Anim</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz" type="model/vnd.usdz+zip" crossorigin>
-  <style>
-    html, body { height: 100%; margin: 0; }
-    body { font-family: system-ui, sans-serif; background:#0b0c10; color:#eee; }
-    model-viewer { width: 100%; height: 100vh; --poster-color: #0b0c10; }
-    .controls { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 3; display:flex; gap:8px; }
-    .controls button { padding: 10px 14px; border-radius: 999px; border: none; background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
-    .diag { position: fixed; right: 10px; bottom: 10px; font-size: 12px; color:#cbd5e1; opacity:.95; max-width: 46vw; background: rgba(0,0,0,0.45); padding:8px 10px; border-radius:8px; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AR Robot — iOS & Android</title>
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<style>
+  html, body { height: 100%; margin: 0; background:#0b0c10; color:#fff; font-family: system-ui, sans-serif; overflow:hidden;}
+  model-viewer { width:100%; height:100vh; --poster-color:#0b0c10; display:block; }
+  #overlay {
+    position:fixed; inset:0; display:flex; justify-content:center; align-items:center;
+    background: rgba(0,0,0,0.6); color:#fff; font-size:18px; cursor:pointer; user-select:none; z-index:10;
+    flex-direction: column; text-align:center;
+  }
+  #overlay p { font-size: 14px; color: #ccc; margin-top: 6px;}
+  button[slot="ar-button"]{display:none;}
+</style>
 </head>
 <body>
-  <model-viewer
-    id="viewer"
-    src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
-    ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
-    alt="Robot"
-    ar
-    ar-modes="webxr scene-viewer quick-look"
-    ar-placement="floor"
-    ar-scale="fixed"
-    camera-controls
-    autoplay
-    shadow-intensity="1"
-  >
-    <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
-    <button slot="ar-button" id="arButton">View in your space</button>
-  </model-viewer>
 
-  <div class="controls">
-    <button id="btnAR" type="button">View in your space</button>
-  </div>
-  <div class="diag" id="diag">Init…</div>
+<model-viewer id="mv"
+  src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
+  ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
+  alt="Robot Expressive"
+  ar
+  ar-modes="quick-look scene-viewer webxr"
+  ar-scale="auto"
+  camera-controls
+  shadow-intensity="1"
+>
+  <!-- iOS Quick Look anchor -->
+  <a slot="ar" id="arLink" rel="ar" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz#allowsContentScaling=0">
+    <img src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" style="width:1px;height:1px;">
+  </a>
+  <button slot="ar-button">View in your space</button>
+</model-viewer>
 
-  <script>
-  (async function(){
-    const mv = document.getElementById('viewer');
-    const btnAR = document.getElementById('btnAR');
-    const diag = document.getElementById('diag');
+<div id="overlay">
+  <div>Chạm bất kỳ đâu để vào AR</div>
+  <p>iPhone: Safari | Android: Chrome</p>
+</div>
 
-    function log(msg){ console.log('[AR]', msg); diag.textContent = msg; }
+<script>
+(async function(){
+  const mv = document.getElementById('mv');
+  const overlay = document.getElementById('overlay');
+  const arLink = document.getElementById('arLink');
 
-    // Chọn animation ưa thích
-    async function playAnimation() {
-      await mv.updateComplete;
-      const anims = mv.availableAnimations || [];
-      if (anims.length > 0) {
-        const prefer = ["Dance","Wave","Running","Walking"];
-        const chosen = anims.find(a => prefer.includes(a)) || anims[0];
-        mv.animationName = chosen;
-        mv.timeScale = 1;
-        mv.play();
-        log("Playing animation: " + chosen);
-      } else {
-        log("No animations found.");
-      }
+  function isIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent);}
+  function isAndroid(){ return /Android/i.test(navigator.userAgent);}
+
+  // Play animation trong AR
+  async function playAnimation(){
+    await mv.updateComplete;
+    const anims = mv.availableAnimations || [];
+    if(anims.length>0){
+      const prefer = ["Dance","Wave","Running","Walking"];
+      const chosen = anims.find(a=>prefer.includes(a)) || anims[0];
+      mv.animationName = chosen;
+      mv.timeScale = 1;
+      mv.play();
+      console.log("[AR] Playing animation:", chosen);
     }
+  }
 
-    // Khi AR bắt đầu → play anim
-    mv.addEventListener("ar-status", e => {
-      log("ar-status: " + e.detail.status);
-      if (e.detail.status === "session-started") {
-        setTimeout(playAnimation, 300);
-      }
-    });
+  // AR session event
+  mv.addEventListener("ar-status", e=>{
+    if(e.detail.status==="session-started"){
+      setTimeout(playAnimation,200);
+      if(navigator.vibrate) navigator.vibrate(20);
+    } else if(e.detail.status==="not-presenting" || e.detail.status==="failed"){
+      try{ mv.pause(); mv.currentTime=0;} catch(e){}
+    }
+  });
 
-    // Khi model load trên web → không auto play (chỉ play khi vào AR)
-    mv.addEventListener("load", () => {
-      mv.pause();
-      mv.animationName = null;
-    });
+  // Web view: giữ model tĩnh
+  mv.addEventListener("load", ()=>{ mv.pause(); mv.animationName=null; });
 
-    btnAR.addEventListener("click", async e => {
-      e.preventDefault();
-      if (mv.canActivateAR) {
-        await mv.activateAR();
-      } else {
-        log("Cannot activate AR in this browser.");
-      }
-    });
+  // Overlay touch → AR
+  function triggerAR(){
+    overlay.remove();
+    if(mv.canActivateAR){ mv.activateAR().catch(()=>console.log("[AR] activateAR failed")); return;}
+    if(isIOS() && arLink && arLink.href){ arLink.click(); return;}
+    if(isAndroid() && mv.src){ window.location.href = mv.src; return;}
+  }
 
-  })();
-  </script>
+  overlay.addEventListener("click", triggerAR, {once:true});
+  document.addEventListener("touchstart", triggerAR, {once:true});
+})();
+</script>
+
 </body>
 </html>
