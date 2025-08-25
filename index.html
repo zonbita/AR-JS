@@ -1,332 +1,207 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple AR Scanner</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.min.js"></script>
-    <script src="https://raw.githack.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
-    
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background: #000;
-            color: white;
-        }
-        
-        .info {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
-            border-radius: 25px;
-            text-align: center;
-            z-index: 1000;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .info h2 {
-            margin: 0 0 10px 0;
-            font-size: 18px;
-            color: #4CAF50;
-        }
-        
-        .info p {
-            margin: 0;
-            font-size: 14px;
-        }
-        
-        .marker-link {
-            color: #4CAF50;
-            text-decoration: none;
-        }
-        
-        .marker-link:hover {
-            text-decoration: underline;
-        }
-        
-        /* Camera Preview */
-        .camera-preview {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            overflow: hidden;
-        }
-        
-        #camera-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tap-to-Place AR (iPhone + Android) — Fixed assets + Animation</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" type="model/vnd.usdz+zip" crossorigin>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { font-family: system-ui, sans-serif; background:#0b0c10; color:#eee; }
+    model-viewer { width: 100%; height: 100vh; --poster-color: #0b0c10; }
+    .controls { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 3; display:flex; gap:8px; }
+    .controls button, .controls a { padding: 10px 14px; border-radius: 999px; border: none; background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.25); text-decoration:none; }
+    .controls .secondary { background: rgba(255,255,255,.06); color:#e6edf3; box-shadow:none; border:1px solid rgba(255,255,255,.06); }
+    .diag { position: fixed; right: 10px; bottom: 10px; font-size: 12px; color:#cbd5e1; opacity:.95; max-width: 46vw; background: rgba(0,0,0,0.45); padding:8px 10px; border-radius:8px; }
+    .notes { position: fixed; left: 10px; bottom: 10px; font-size: 12px; color:#9aa1a9; max-width: 46vw; }
+  </style>
 </head>
 <body>
-    <div class="info">
-        <h2>🎯 AR Scanner</h2>
-        <p>Point camera at <a href="https://ar-js-org.github.io/AR.js/data/images/hiro.png" target="_blank" class="marker-link">Hiro marker</a></p>
-        <div id="status" style="margin-top: 10px; padding: 8px; background: #333; border-radius: 5px; font-size: 12px;">Status: Waiting for marker...</div>
-        <button id="debug-btn" onclick="debugMarker()" style="margin-top: 10px; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Debug Marker</button>
-    </div>
+  <model-viewer
+    id="viewer"
+    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+    ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
+    alt="Astronaut"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    ar-placement="floor"
+    ar-scale="fixed"
+    camera-controls
+    autoplay
+    animation-loop
+    tone-mapping="aces"
+    shadow-intensity="1"
+    interaction-prompt="auto"
+  >
+    <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
+    <button slot="ar-button" id="arButton">View in your space</button>
+  </model-viewer>
 
-    <!-- Camera Preview -->
-    <div class="camera-preview">
-        <video id="camera-video" autoplay muted playsinline></video>
-    </div>
+  <div class="controls" role="region" aria-label="AR controls">
+    <button id="btnAR" type="button">View in your space</button>
+    <button id="btnDiag" class="secondary" type="button">Run diagnostics</button>
+    <a id="manualScene" class="secondary" href="#">Open Scene Viewer</a>
+  </div>
 
-    <a-scene
-        vr-mode-ui="enabled: false"
-        embedded
-        arjs="sourceType: webcam; debugUIEnabled: true;">
+  <div class="diag" id="diag">Initializing…</div>
+  <div class="notes">Notes: This page uses public sample models so you won't get a 404. Replace the <code>src</code>/<code>ios-src</code> with your own HTTPS-hosted files for production.</div>
 
-        <!-- Hiro Marker -->
-        <a-marker preset="hiro">
-            <!-- Test Cube (for debugging) -->
-            <a-box position="0 0 0" material="color: red;" scale="1 1 1"></a-box>
-            
-            <!-- Single GLB Model -->
-            <a-entity 
-                position="0 2 0" 
-                scale="1 1 1"
-                gltf-model="https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf">
-            </a-entity>
-        </a-marker>
-        
-        <!-- Simple Test Marker -->
-        <a-marker preset="barcode">
-            <a-sphere position="0 0 0" material="color: blue;" scale="0.5 0.5 0.5"></a-sphere>
-        </a-marker>
+  <script>
+  (async function init() {
+    const mv = document.getElementById('viewer');
+    const btnAR = document.getElementById('btnAR');
+    const btnDiag = document.getElementById('btnDiag');
+    const manualScene = document.getElementById('manualScene');
+    const platformArLink = document.getElementById('platformArLink');
+    const diag = document.getElementById('diag');
 
-        <!-- Camera -->
-        <a-entity camera></a-entity>
-        
-        <!-- Always visible test cube -->
-        <a-box position="0 0 -5" material="color: yellow;" scale="1 1 1"></a-box>
-        
-        <!-- Lighting -->
-        <a-light type="ambient" color="#FFFFFF" intensity="0.6"></a-light>
-        <a-light type="directional" position="0 10 5" color="#FFFFFF" intensity="0.8"></a-light>
-    </a-scene>
+    const isAndroid = () => /Android/i.test(navigator.userAgent);
+    const isChrome = () => /Chrome\//i.test(navigator.userAgent) && !/CriOS/.test(navigator.userAgent);
+    const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    <script>
-        let cameraStream = null;
-        
-        // Check camera permissions and availability
-        async function checkCameraPermissions() {
-            try {
-                // Check if getUserMedia is supported
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Camera API not supported in this browser');
-                }
-                
-                // Check permissions
-                if (navigator.permissions && navigator.permissions.query) {
-                    const permission = await navigator.permissions.query({ name: 'camera' });
-                    if (permission.state === 'denied') {
-                        throw new Error('Camera permission denied. Please enable camera access in your browser settings.');
-                    }
-                }
-                
-                // Request camera access
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment', // Use back camera if available
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
-                });
-                
-                cameraStream = stream;
-                
-                // Show camera feed in video element
-                const videoElement = document.getElementById('camera-video');
-                if (videoElement) {
-                    videoElement.srcObject = stream;
-                    videoElement.play();
-                }
-                
-                return true;
-                
-            } catch (error) {
-                console.error('Camera error:', error);
-                alert(`Camera Access Error: ${error.message}\n\nSolutions:\n- Allow camera access when prompted\n- Check browser camera permissions\n- Use HTTPS (required for camera)\n- Try refreshing the page`);
-                return false;
-            }
+    function log(...parts) {
+      const text = parts.map(p => (typeof p === 'object' ? JSON.stringify(p) : String(p))).join(' ');
+      console.log('[AR Debug]', text);
+      diag.textContent = text;
+    }
+
+    try {
+      await customElements.whenDefined('model-viewer');
+      log('model-viewer defined');
+    } catch (e) {
+      log('Error waiting for model-viewer definition:', e?.message || e);
+    }
+
+    const glb = mv.getAttribute('src');
+    const usdz = mv.getAttribute('ios-src');
+
+    if (platformArLink && usdz) {
+      try {
+        platformArLink.href = new URL(usdz, location.href).href + '#allowsContentScaling=0';
+      } catch (e) { }
+    }
+
+    async function probeAsset(url) {
+      try {
+        const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        return { ok: res.ok, status: res.status, type: res.headers.get('content-type') };
+      } catch (err) {
+        return { ok: false, error: err.message || String(err) };
+      }
+    }
+
+    function sceneViewerUrlFor(glbUrl, title) {
+      const file = encodeURIComponent(new URL(glbUrl, location.href).href);
+      const t = encodeURIComponent(title || '3D Model');
+      return `https://arvr.google.com/scene-viewer/1.0?file=${file}&mode=ar_preferred&title=${t}`;
+    }
+
+    function sceneViewerIntent(glbUrl, title) {
+      const file = encodeURIComponent(new URL(glbUrl, location.href).href);
+      const t = encodeURIComponent(title || '3D Model');
+      const fallback = encodeURIComponent(location.href);
+      return `intent://arvr.google.com/scene-viewer/1.0?file=${file}&mode=ar_preferred&title=${t}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
+    }
+
+    async function runDiagnostics() {
+      log('UserAgent: ' + navigator.userAgent);
+      if (glb) {
+        log('Probing GLB:', glb);
+        const g = await probeAsset(glb);
+        log('GLB probe: ' + JSON.stringify(g));
+      }
+      if (usdz) {
+        log('Probing USDZ:', usdz);
+        const u = await probeAsset(usdz);
+        log('USDZ probe: ' + JSON.stringify(u));
+      }
+
+      try {
+        if (typeof mv.canActivateAR !== 'undefined') log('mv.canActivateAR: ' + mv.canActivateAR);
+      } catch (e) { }
+
+      if (navigator.xr && navigator.xr.isSessionSupported) {
+        try {
+          const supported = await navigator.xr.isSessionSupported('immersive-ar');
+          log('navigator.xr immersive-ar supported: ' + supported);
+        } catch (err) { log('navigator.xr check error: ' + (err?.message || err)); }
+      } else {
+        log('navigator.xr not available');
+      }
+
+      log('Diagnostics complete. Try pressing "View in your space" after this message.');
+    }
+
+    btnDiag.addEventListener('click', async () => {
+      await runDiagnostics();
+    });
+
+    manualScene.href = glb ? sceneViewerUrlFor(glb, mv.getAttribute('alt')) : '#';
+
+    btnAR.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      log('AR button clicked — checking capabilities...');
+
+      try {
+        if (mv.canActivateAR) {
+          log('Calling model-viewer.activateAR()');
+          await mv.activateAR();
+          return;
         }
-        
-        // Initialize AR scene
-        window.addEventListener('load', async function() {
-            console.log('AR.js scene loading...');
-            
-            // Check camera permissions first
-            const cameraReady = await checkCameraPermissions();
-            
-            if (cameraReady) {
-                // Wait for A-Frame to be ready
-                document.addEventListener('aframe-loaded', function() {
-                    console.log('🎮 A-Frame loaded, setting up markers...');
-                    setupMarkers();
-                });
-                
-                // Fallback if aframe-loaded doesn't fire
-                setTimeout(() => {
-                    if (document.querySelector('a-scene').hasLoaded) {
-                        console.log('⏰ A-Frame loaded (fallback), setting up markers...');
-                        setupMarkers();
-                    }
-                }, 2000);
-            }
-        });
-        
-        function setupMarkers() {
-            console.log('🔧 Setting up marker detection...');
-            
-            // Get Hiro marker
-            const hiroMarker = document.querySelector('a-marker[preset="hiro"]');
-            const testMarker = document.querySelector('a-marker[preset="barcode"]');
-            const statusDiv = document.getElementById('status');
-            
-            console.log('🎯 Hiro marker element:', hiroMarker);
-            console.log('🧪 Test marker element:', testMarker);
-            
-            if (hiroMarker) {
-                // Hiro marker events
-                hiroMarker.addEventListener('markerFound', function() {
-                    console.log('🎯 Hiro marker detected!');
-                    statusDiv.textContent = 'Status: ✅ Hiro marker detected!';
-                    statusDiv.style.background = '#4CAF50';
-                    statusDiv.style.color = 'white';
-                });
-                
-                hiroMarker.addEventListener('markerLost', function() {
-                    console.log('❌ Hiro marker lost');
-                    statusDiv.textContent = 'Status: ❌ Hiro marker lost';
-                    statusDiv.style.background = '#f44336';
-                    statusDiv.style.color = 'white';
-                });
-            }
-            
-            if (testMarker) {
-                // Test marker events
-                testMarker.addEventListener('markerFound', function() {
-                    console.log('🧪 Test marker detected!');
-                    statusDiv.textContent = 'Status: 🧪 Test marker detected!';
-                    statusDiv.style.background = '#2196F3';
-                    statusDiv.style.color = 'white';
-                });
-                
-                testMarker.addEventListener('markerLost', function() {
-                    console.log('❌ Test marker lost');
-                    statusDiv.textContent = 'Status: ❌ Test marker lost';
-                    statusDiv.style.background = '#f44336';
-                    statusDiv.style.color = 'white';
-                });
-            }
-            
-            // Add AR.js events
-            document.addEventListener('arjs-camera-init', function(evt) {
-                console.log('📹 AR.js camera initialized', evt);
-                statusDiv.textContent = 'Status: 📹 Camera ready - scan markers';
-                statusDiv.style.background = '#2196F3';
-                statusDiv.style.color = 'white';
-            });
-            
-            document.addEventListener('arjs-camera-error', function(evt) {
-                console.error('🚨 AR.js camera error', evt);
-                statusDiv.textContent = 'Status: 🚨 Camera error';
-                statusDiv.style.background = '#f44336';
-                statusDiv.style.color = 'white';
-            });
-            
-            // Add basic A-Frame events
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('🌐 DOM loaded');
-            });
-            
-            // Check if scene is loaded
-            const scene = document.querySelector('a-scene');
-            if (scene) {
-                scene.addEventListener('loaded', function() {
-                    console.log('🎮 A-Frame scene loaded');
-                });
-            }
+
+        if (isIOS()) {
+          if (platformArLink && platformArLink.href) {
+            log('Opening iOS Quick Look via anchor');
+            platformArLink.click();
+            return;
+          }
         }
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', function() {
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(track => track.stop());
+
+        if (navigator.xr && navigator.xr.isSessionSupported) {
+          try {
+            const supported = await navigator.xr.isSessionSupported('immersive-ar');
+            log('navigator.xr immersive-ar supported:', supported);
+            if (supported) {
+              await mv.activateAR();
+              return;
             }
-        });
-        
-        console.log('🎯 Simple AR Scanner loaded');
-        console.log('📱 Point camera at Hiro marker to see 3D model');
-        
-        // Debug function to test marker detection
-        function debugMarker() {
-            console.log('🔍 Debug button clicked');
-            
-            const hiroMarker = document.querySelector('a-marker[preset="hiro"]');
-            const testMarker = document.querySelector('a-marker[preset="barcode"]');
-            const scene = document.querySelector('a-scene');
-            
-            console.log('📊 Hiro marker element:', hiroMarker);
-            console.log('🧪 Test marker element:', testMarker);
-            console.log('🎮 Scene element:', scene);
-            
-            // Test Hiro marker
-            if (hiroMarker && hiroMarker.object3D) {
-                console.log('🎯 Hiro marker 3D object:', hiroMarker.object3D);
-                console.log('👁️ Hiro marker visible:', hiroMarker.object3D.visible);
-                console.log('📍 Hiro marker position:', hiroMarker.object3D.position);
-            } else {
-                console.log('❌ Hiro marker not found or no 3D object');
-            }
-            
-            // Test marker
-            if (testMarker && testMarker.object3D) {
-                console.log('🧪 Test marker 3D object:', testMarker.object3D);
-                console.log('👁️ Test marker visible:', testMarker.object3D.visible);
-            } else {
-                console.log('❌ Test marker not found or no 3D object');
-            }
-            
-            // Check AR.js status
-            if (scene && scene.systems && scene.systems.arjs) {
-                console.log('🎮 AR.js system:', scene.systems.arjs);
-            } else {
-                console.log('❌ AR.js system not found');
-            }
-            
-            // Test camera stream
-            if (cameraStream) {
-                console.log('📱 Camera stream active:', cameraStream.active);
-                console.log('📹 Camera tracks:', cameraStream.getTracks().length);
-            } else {
-                console.log('❌ No camera stream');
-            }
-            
-            // Check if A-Frame is loaded
-            if (typeof AFRAME !== 'undefined') {
-                console.log('✅ A-Frame is loaded');
-            } else {
-                console.log('❌ A-Frame not loaded');
-            }
-            
-            // Check if AR.js is loaded
-            if (typeof ARjs !== 'undefined') {
-                console.log('✅ AR.js is loaded');
-            } else {
-                console.log('❌ AR.js not loaded');
-            }
+          } catch (e) {
+            log('XR isSessionSupported() error:', e?.message || e);
+          }
         }
-    </script>
+
+        if (isAndroid() && glb) {
+          const url = sceneViewerUrlFor(glb, mv.getAttribute('alt'));
+          log('Opening Scene Viewer (https) fallback: ' + url);
+          window.open(url, '_self');
+          return;
+        }
+
+        log('AR not available on this device/browser.');
+      } catch (err) {
+        log('AR launch error: ' + (err?.message || err));
+        if (isAndroid() && glb) {
+          const intent = sceneViewerIntent(glb, mv.getAttribute('alt'));
+          log('Falling back to intent URL: ' + intent);
+          window.location.href = intent;
+        }
+      }
+    });
+
+    mv.addEventListener('ar-status', (e) => {
+      const { status, reason } = e.detail || {};
+      log('ar-status: ' + status + (reason ? (' | reason: ' + reason) : ''));
+      if (status === 'session-started' && navigator.vibrate) navigator.vibrate(10);
+    });
+
+    // ensure animation starts
+    mv.addEventListener('load', () => {
+      mv.play({ repetitions: Infinity });
+    });
+
+    await runDiagnostics();
+  })();
+  </script>
 </body>
 </html>
