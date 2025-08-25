@@ -53,7 +53,7 @@
   </div>
 
   <div class="diag" id="diag">Initializing…</div>
-  <div class="notes">Notes: Animation will only play in AR mode, not in the web viewer. Replace the <code>src</code>/<code>ios-src</code> with your own HTTPS-hosted files for production.</div>
+  <div class="notes">Notes: Animation will automatically play when entering AR mode. Replace the <code>src</code>/<code>ios-src</code> with your own HTTPS-hosted files for production.</div>
 
   <script>
   (async function init() {
@@ -121,9 +121,12 @@
     function startAnimation() {
       try {
         if (mv.availableAnimations && mv.availableAnimations.length > 0) {
+          // Play all available animations or just the first one
           mv.animationName = mv.availableAnimations[0];
           mv.play();
-          log('Animation started in AR mode');
+          log('Animation started in AR mode: ' + mv.animationName);
+        } else {
+          log('No animations available to play');
         }
       } catch (e) {
         log('Error starting animation:', e?.message || e);
@@ -133,6 +136,7 @@
     function stopAnimation() {
       try {
         mv.pause();
+        mv.currentTime = 0; // Reset to beginning
         mv.animationName = null;
         log('Animation stopped - exited AR mode');
       } catch (e) {
@@ -256,7 +260,10 @@
       
       // Start animation when AR session begins
       if (status === 'session-started') {
-        startAnimation();
+        // Small delay to ensure AR session is fully initialized
+        setTimeout(() => {
+          startAnimation();
+        }, 100);
         if (navigator.vibrate) navigator.vibrate(10);
       }
       
@@ -271,6 +278,31 @@
       log('Model loaded. Available animations:', mv.availableAnimations);
       // Ensure no animation plays on initial load
       stopAnimation();
+    });
+
+    // Listen for when the model is ready in AR mode
+    mv.addEventListener('ar-tracking', (e) => {
+      log('AR tracking event:', e.detail);
+      // Ensure animation is playing when tracking starts
+      if (mv.availableAnimations && mv.availableAnimations.length > 0) {
+        startAnimation();
+      }
+    });
+
+    // Backup method: listen for camera-change events in AR
+    mv.addEventListener('camera-change', (e) => {
+      // Only in AR mode, ensure animation is playing
+      if (mv.getAttribute('ar') && mv.availableAnimations && mv.availableAnimations.length > 0) {
+        // Check if we're likely in AR mode by looking at camera properties
+        const source = e.detail?.source;
+        if (source === 'user-interaction' || source === 'automatic') {
+          // Small chance we're in AR, try to start animation if not already playing
+          if (!mv.paused) return; // Already playing
+          setTimeout(() => {
+            startAnimation();
+          }, 50);
+        }
+      }
     });
 
     // Auto-run a quick diagnostics so user sees immediate feedback
