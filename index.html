@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AR Robot — iOS & Android</title>
+<title>Robot AR — iOS & Android</title>
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <style>
-  html, body { height: 100%; margin: 0; background:#0b0c10; color:#fff; font-family: system-ui, sans-serif; overflow:hidden;}
-  model-viewer { width:100%; height:100vh; --poster-color:#0b0c10; display:block; }
+  html, body { height: 100%; margin: 0; background:#0b0c10; color:#fff; font-family: system-ui, sans-serif;}
+  model-viewer { width:100%; height:100vh; display:block; }
   #overlay {
     position:fixed; inset:0; display:flex; justify-content:center; align-items:center;
-    background: rgba(0,0,0,0.6); color:#fff; font-size:18px; cursor:pointer; user-select:none; z-index:10;
+    background: rgba(0,0,0,0.6); color:#fff; font-size:18px; cursor:pointer; z-index:10;
     flex-direction: column; text-align:center;
   }
   #overlay p { font-size: 14px; color: #ccc; margin-top: 6px;}
@@ -29,7 +29,6 @@
   camera-controls
   shadow-intensity="1"
 >
-  <!-- iOS Quick Look anchor -->
   <a slot="ar" id="arLink" rel="ar" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz#allowsContentScaling=0">
     <img src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" style="width:1px;height:1px;">
   </a>
@@ -37,8 +36,8 @@
 </model-viewer>
 
 <div id="overlay">
-  <div>Chạm bất kỳ đâu để vào AR</div>
-  <p>iPhone: Safari | Android: Chrome</p>
+  <div>Tap anywhere to enter AR</div>
+  <p>iPhone: Safari only | Android: Chrome</p>
 </div>
 
 <script>
@@ -50,7 +49,6 @@
   function isIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent);}
   function isAndroid(){ return /Android/i.test(navigator.userAgent);}
 
-  // Play animation trong AR
   async function playAnimation(){
     await mv.updateComplete;
     const anims = mv.availableAnimations || [];
@@ -64,7 +62,6 @@
     }
   }
 
-  // AR session event
   mv.addEventListener("ar-status", e=>{
     if(e.detail.status==="session-started"){
       setTimeout(playAnimation,200);
@@ -74,10 +71,8 @@
     }
   });
 
-  // Web view: giữ model tĩnh
   mv.addEventListener("load", ()=>{ mv.pause(); mv.animationName=null; });
 
-  // Overlay touch → AR
   function triggerAR(){
     overlay.remove();
     if(mv.canActivateAR){ mv.activateAR().catch(()=>console.log("[AR] activateAR failed")); return;}
