@@ -1,12 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Robot AR — iOS & Android</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robot AR — iPhone & Android</title>
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <style>
-  html, body { height: 100%; margin: 0; background:#0b0c10; color:#fff; font-family: system-ui, sans-serif;}
+  html, body { height:100%; margin:0; background:#0b0c10; color:#fff; font-family: system-ui, sans-serif;}
   model-viewer { width:100%; height:100vh; display:block; }
   #overlay {
     position:fixed; inset:0; display:flex; justify-content:center; align-items:center;
@@ -49,7 +49,7 @@
   const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const isAndroid = () => /Android/i.test(navigator.userAgent);
 
-  // Play animation (only works on GLB / WebXR)
+  // Play animation (GLB/WebXR)
   async function playAnimation(){
     await mv.updateComplete;
     const anims = mv.availableAnimations || [];
@@ -63,7 +63,7 @@
     }
   }
 
-  // Listen for AR session start
+  // AR session start
   mv.addEventListener("ar-status", e=>{
     if(e.detail.status==="session-started"){
       setTimeout(playAnimation,200);
@@ -73,10 +73,10 @@
     }
   });
 
-  // Pause animation on load
+  // Pause animation initially
   mv.addEventListener("load", ()=>{ mv.pause(); mv.animationName=null; });
 
-  // Trigger AR via overlay tap
+  // Trigger AR on user tap
   function triggerAR(){
     overlay.remove();
     if(mv.canActivateAR){ mv.activateAR().catch(()=>console.log("[AR] activateAR failed")); return;}
