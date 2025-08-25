@@ -407,11 +407,12 @@
 
   <div class="status-panel" id="status">Loading animated character...</div>
   <div class="notes-panel">
-    <strong>Controls:</strong><br>
-    • Tap animation buttons to change character movement<br>
-    • Adjust volume or mute sound effects<br>
-    • Use AR to place character in your space<br>
-    • Character has idle, walking, and running animations
+    <strong>AR Animation Controls:</strong><br>
+    • Select animation BEFORE entering AR<br>
+    • Animations will play automatically in AR mode<br>
+    • Use Walk/Run for movement, Idle for stationary<br>
+    • Sounds play in web preview only (not in AR)<br>
+    • Character maintains animation state in AR
   </div>
 
   <script>
@@ -489,7 +490,7 @@
       }
     }
 
-    // Animation management
+    // Animation management with AR support
     function setAnimation(animName, soundType = null) {
       if (currentAnimation === animName) return;
       
@@ -500,17 +501,24 @@
       document.querySelectorAll('.btn-animation').forEach(btn => btn.classList.remove('active'));
       document.getElementById(`btn${animName}`).classList.add('active');
       
-      // Play appropriate sound
-      if (soundType) {
+      // Play appropriate sound (web only, not in AR)
+      if (soundType && !isInAR()) {
         playSound(soundType);
       } else {
         stopAllSounds();
       }
       
-      updateStatus(`🎭 Animation changed to: ${animName}`, 'success');
+      updateStatus(`🎭 Animation set to: ${animName} ${isInAR() ? '(Active in AR)' : '(Preview mode)'}`, 'success');
       
       // Haptic feedback
       if (navigator.vibrate) navigator.vibrate(30);
+    }
+
+    // Check if currently in AR session
+    function isInAR() {
+      // This is a simple check - model-viewer doesn't expose AR state directly
+      // but we can infer it from recent ar-status events
+      return mv.classList.contains('ar-active') || document.fullscreenElement === mv;
     }
 
     // Event listeners for animation buttons
@@ -640,20 +648,27 @@
       updateStatus('🔗 Opening Scene Viewer manually...');
     });
 
-    // Enhanced AR activation
+    // Enhanced AR activation with animation support
     btnAR.addEventListener('click', async (ev) => {
       ev.preventDefault();
-      updateStatus('🚀 Launching AR experience...');
+      updateStatus('🚀 Launching AR experience with animations...');
 
       try {
+        // Ensure animation is set before entering AR
+        if (currentAnimation !== 'Idle') {
+          mv.animationName = currentAnimation;
+          updateStatus(`🎭 Setting AR animation to: ${currentAnimation}`, 'info');
+        }
+
         if (mv.canActivateAR) {
-          updateStatus('✓ Activating AR via model-viewer...', 'success');
+          updateStatus('✓ Activating AR with animations via model-viewer...', 'success');
           await mv.activateAR();
           return;
         }
 
         if (isIOS() && platformArLink && platformArLink.href) {
-          updateStatus('📱 Opening iOS Quick Look...', 'success');
+          updateStatus('📱 Opening iOS Quick Look with animations...', 'success');
+          // For iOS, animations are embedded in the USDZ file
           platformArLink.click();
           return;
         }
@@ -662,7 +677,7 @@
           try {
             const supported = await navigator.xr.isSessionSupported('immersive-ar');
             if (supported) {
-              updateStatus('🥽 Starting WebXR AR session...', 'success');
+              updateStatus('🥽 Starting WebXR AR session with animations...', 'success');
               await mv.activateAR();
               return;
             }
@@ -673,7 +688,7 @@
 
         if (isAndroid() && glb) {
           const url = sceneViewerUrlFor(glb, mv.getAttribute('alt'));
-          updateStatus('🤖 Opening Android Scene Viewer...', 'success');
+          updateStatus('🤖 Opening Android Scene Viewer with animations...', 'success');
           window.open(url, '_self');
           return;
         }
@@ -684,7 +699,7 @@
       }
     });
 
-    // Model-viewer event listeners
+    // Model-viewer event listeners with AR animation support
     mv.addEventListener('ar-status', (e) => {
       const { status, reason } = e.detail || {};
       let message = `AR Status: ${status}`;
@@ -692,8 +707,26 @@
       
       updateStatus(message, status === 'session-started' ? 'success' : 'info');
       
-      if (status === 'session-started' && navigator.vibrate) {
-        navigator.vibrate([50, 100, 50]);
+      if (status === 'session-started') {
+        // Ensure animation plays in AR
+        setTimeout(() => {
+          if (currentAnimation !== 'Idle') {
+            mv.animationName = currentAnimation;
+            updateStatus(`🎭 AR Animation active: ${currentAnimation}`, 'success');
+          }
+        }, 500);
+        
+        if (navigator.vibrate) {
+          navigator.vibrate([50, 100, 50]);
+        }
+      }
+    });
+
+    // Listen for AR session changes to maintain animations
+    mv.addEventListener('camera-change', () => {
+      // Ensure animation continues during AR interactions
+      if (mv.animationName !== currentAnimation) {
+        mv.animationName = currentAnimation;
       }
     });
 
