@@ -26,8 +26,6 @@
   ar-scale="auto"
   camera-controls
   shadow-intensity="1"
-  autoplay="false"
-  loop="false"
 >
   <a slot="ar" rel="ar" href="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz"></a>
 </model-viewer>
@@ -35,48 +33,53 @@
 <audio id="robot-sound" src="https://raw.githubusercontent.com/zonbita/AR-JS/main/lactroi.mp3" loop></audio>
 
 <script>
-(async function(){
-  const mv = document.getElementById('mv');
-  const audio = document.getElementById('robot-sound');
+const mv = document.getElementById('mv');
+const audio = document.getElementById('robot-sound');
 
-  const isIOS = () => /(iPhone|iPad|iPod)/i.test(navigator.userAgent) && !window.MSStream;
+const isIOS = () => /(iPhone|iPad|iPod)/i.test(navigator.userAgent) && !window.MSStream;
 
-  // Only play animation/audio when AR session starts
-  mv.addEventListener("ar-status", e=>{
-    if(e.detail.status === "session-started"){
-      if(navigator.vibrate) navigator.vibrate(20);
+// --------------------
+// WebXR: play animation + audio when AR session starts
+mv.addEventListener("ar-status", e => {
+  if (e.detail.status === "session-started") {
+    if (navigator.vibrate) navigator.vibrate(20);
 
-      // Start animation
-      const anims = mv.availableAnimations || [];
-      if(anims.length > 0){
-        const chosen = anims.includes("Dance") ? "Dance" : anims[0];
-        mv.animationName = chosen;
-        mv.timeScale = 1;
-        mv.loop = true;
-        if(mv.play) mv.play();
-      }
-
-      // Play audio
-      audio.currentTime = 0;
-      audio.play().catch(()=>console.log("[AR] Audio blocked"));
-    } else if(e.detail.status==="not-presenting" || e.detail.status==="failed"){
-      audio.pause();
-      audio.currentTime = 0;
-      try{ mv.pause(); mv.currentTime=0;} catch(e){}
+    // Start animation
+    const anims = mv.availableAnimations || [];
+    if (anims.length > 0) {
+      const chosen = anims.includes("Dance") ? "Dance" : anims[0];
+      mv.animationName = chosen;
+      mv.timeScale = 1;
+      mv.loop = true;
+      if (mv.play) mv.play();
     }
-  });
 
-  // iOS Quick Look workaround: play audio on AR button tap
-  if(isIOS()){
+    // Start audio
+    audio.currentTime = 0;
+    audio.play().catch(()=>console.log("[WebXR] Audio blocked"));
+  } else if (e.detail.status==="not-presenting" || e.detail.status==="failed") {
+    audio.pause();
+    audio.currentTime = 0;
+    try { mv.pause(); mv.currentTime=0; } catch(e) {}
+  }
+});
+
+// --------------------
+// iOS Quick Look: play audio on AR button tap
+if(isIOS()){
+  function attachIOSAudio(){
     const arButton = mv.shadowRoot.querySelector('button[slot="ar-button"]');
     if(arButton){
       arButton.addEventListener('click', ()=>{
         audio.currentTime = 0;
         audio.play().catch(()=>console.log("[iOS] Audio blocked"));
       });
+    } else {
+      setTimeout(attachIOSAudio, 200); // retry until button exists
     }
   }
-})();
+  attachIOSAudio();
+}
 </script>
 
 </body>
