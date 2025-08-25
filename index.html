@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Enhanced AR Experience — Tap-to-Place 3D Models</title>
+  <title>Animated AR Character — Walk & Run with Sound</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" type="model/vnd.usdz+zip" crossorigin>
   <style>
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; padding: 0; }
@@ -91,6 +90,14 @@
       gap: 16px;
     }
     
+    .animation-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+    
     .primary-controls {
       display: flex;
       gap: 12px;
@@ -149,6 +156,24 @@
       box-shadow: 0 12px 40px rgba(59, 130, 246, 0.6);
     }
     
+    .btn-animation {
+      background: linear-gradient(45deg, #10b981, #06d6a0);
+      color: white;
+      padding: 10px 18px;
+      font-size: 14px;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-animation:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    }
+    
+    .btn-animation.active {
+      background: linear-gradient(45deg, #f59e0b, #f97316);
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5);
+    }
+    
     .btn-secondary { 
       background: rgba(255, 255, 255, 0.1);
       color: rgba(255, 255, 255, 0.9);
@@ -193,6 +218,44 @@
       z-index: 5;
     }
     
+    .audio-controls {
+      position: fixed;
+      bottom: 180px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+    
+    .volume-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .volume-slider {
+      width: 80px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.3);
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+    }
+    
     .loading-indicator {
       position: absolute;
       top: 50%;
@@ -218,6 +281,10 @@
     .ar-icon::before { content: "📱"; }
     .diag-icon::before { content: "🔧"; }
     .link-icon::before { content: "🔗"; }
+    .walk-icon::before { content: "🚶"; }
+    .run-icon::before { content: "🏃"; }
+    .idle-icon::before { content: "🧍"; }
+    .sound-icon::before { content: "🔊"; }
     
     @media (max-width: 640px) {
       .header h1 { font-size: 20px; }
@@ -235,6 +302,10 @@
         left: 10px;
         right: 10px;
         max-width: none;
+      }
+      .audio-controls {
+        bottom: 140px;
+        left: 10px;
       }
     }
     
@@ -254,19 +325,28 @@
   <div class="bg-particles" id="particles"></div>
   
   <div class="header">
-    <h1>AR Model Viewer</h1>
-    <p>Tap "View in your space" to place 3D models in augmented reality</p>
+    <h1>Animated AR Character</h1>
+    <p>Control animations and place the character in AR with sound effects</p>
   </div>
 
   <div class="loading-indicator" id="loading">
     <div class="spinner"></div>
   </div>
 
+  <!-- Audio elements for sound effects -->
+  <audio id="walkSound" loop>
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYeGzOOy/jYgSsFIXPF8t+SRAsRV7Ln76xZGQlDk+buwGgeG0U9jH6q" type="audio/wav">
+  </audio>
+  
+  <audio id="runSound" loop>
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm20IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYeGzOOy/jYgSsFIXPF8t+SRAsRV7Ln76xZGQlDk+buwGgeG0U9" type="audio/wav">
+  </audio>
+
   <model-viewer
     id="viewer"
-    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
-    ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
-    alt="Astronaut 3D Model"
+    src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
+    ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
+    alt="Animated Robot Character"
     ar
     ar-modes="webxr scene-viewer quick-look"
     ar-placement="floor"
@@ -278,17 +358,43 @@
     interaction-prompt="auto"
     environment-image="neutral"
     exposure="1"
+    animation-name="Idle"
+    animation-crossfade-duration="300"
   >
     <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
     <button slot="ar-button" id="arButton" style="display:none">View in AR</button>
   </model-viewer>
 
-  <div class="controls" role="region" aria-label="AR controls">
+  <div class="audio-controls">
+    <div class="volume-control">
+      <span class="sound-icon"></span>
+      <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="50">
+      <span id="volumeText" style="font-size: 10px; color: #ccc;">50%</span>
+    </div>
+    <button id="muteBtn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+      🔇 Mute
+    </button>
+  </div>
+
+  <div class="controls" role="region" aria-label="Character controls">
+    <div class="animation-controls">
+      <button id="btnIdle" class="btn btn-animation active" type="button">
+        <span class="idle-icon"></span>Idle
+      </button>
+      <button id="btnWalk" class="btn btn-animation" type="button">
+        <span class="walk-icon"></span>Walk
+      </button>
+      <button id="btnRun" class="btn btn-animation" type="button">
+        <span class="run-icon"></span>Run
+      </button>
+    </div>
+    
     <div class="primary-controls">
       <button id="btnAR" class="btn btn-primary" type="button">
         <span class="ar-icon"></span>View in your space
       </button>
     </div>
+    
     <div class="secondary-controls">
       <button id="btnDiag" class="btn btn-secondary" type="button">
         <span class="diag-icon"></span>Diagnostics
@@ -299,12 +405,13 @@
     </div>
   </div>
 
-  <div class="status-panel" id="status">Initializing AR experience...</div>
+  <div class="status-panel" id="status">Loading animated character...</div>
   <div class="notes-panel">
-    <strong>Instructions:</strong><br>
-    • iPhone: Uses ARKit Quick Look<br>
-    • Android: Uses ARCore Scene Viewer<br>
-    • Make sure you're on HTTPS for AR features
+    <strong>Controls:</strong><br>
+    • Tap animation buttons to change character movement<br>
+    • Adjust volume or mute sound effects<br>
+    • Use AR to place character in your space<br>
+    • Character has idle, walking, and running animations
   </div>
 
   <script>
@@ -316,6 +423,21 @@
     const platformArLink = document.getElementById('platformArLink');
     const status = document.getElementById('status');
     const loading = document.getElementById('loading');
+    
+    // Animation control buttons
+    const btnIdle = document.getElementById('btnIdle');
+    const btnWalk = document.getElementById('btnWalk');
+    const btnRun = document.getElementById('btnRun');
+    
+    // Audio controls
+    const walkSound = document.getElementById('walkSound');
+    const runSound = document.getElementById('runSound');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeText = document.getElementById('volumeText');
+    const muteBtn = document.getElementById('muteBtn');
+    
+    let currentAnimation = 'Idle';
+    let isMuted = false;
 
     // Create floating particles
     function createParticles() {
@@ -333,7 +455,6 @@
     createParticles();
 
     const isAndroid = () => /Android/i.test(navigator.userAgent);
-    const isChrome = () => /Chrome\//i.test(navigator.userAgent) && !/CriOS/.test(navigator.userAgent);
     const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     function updateStatus(message, type = 'info') {
@@ -341,6 +462,84 @@
       const timestamp = new Date().toLocaleTimeString();
       status.innerHTML = `<div style="color: ${type === 'error' ? '#f87171' : type === 'success' ? '#4ade80' : '#60a5fa'}">[${timestamp}]</div>${message}`;
     }
+
+    // Audio management
+    function setVolume(volume) {
+      walkSound.volume = volume / 100;
+      runSound.volume = volume / 100;
+      volumeText.textContent = volume + '%';
+    }
+
+    function stopAllSounds() {
+      walkSound.pause();
+      walkSound.currentTime = 0;
+      runSound.pause();
+      runSound.currentTime = 0;
+    }
+
+    function playSound(soundType) {
+      if (isMuted) return;
+      
+      stopAllSounds();
+      
+      if (soundType === 'walk') {
+        walkSound.play().catch(e => console.log('Walk sound play failed:', e));
+      } else if (soundType === 'run') {
+        runSound.play().catch(e => console.log('Run sound play failed:', e));
+      }
+    }
+
+    // Animation management
+    function setAnimation(animName, soundType = null) {
+      if (currentAnimation === animName) return;
+      
+      currentAnimation = animName;
+      mv.animationName = animName;
+      
+      // Update button states
+      document.querySelectorAll('.btn-animation').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`btn${animName}`).classList.add('active');
+      
+      // Play appropriate sound
+      if (soundType) {
+        playSound(soundType);
+      } else {
+        stopAllSounds();
+      }
+      
+      updateStatus(`🎭 Animation changed to: ${animName}`, 'success');
+      
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+
+    // Event listeners for animation buttons
+    btnIdle.addEventListener('click', () => setAnimation('Idle'));
+    btnWalk.addEventListener('click', () => setAnimation('Walk', 'walk'));
+    btnRun.addEventListener('click', () => setAnimation('Running', 'run'));
+
+    // Volume control
+    volumeSlider.addEventListener('input', (e) => {
+      setVolume(parseInt(e.target.value));
+    });
+
+    muteBtn.addEventListener('click', () => {
+      isMuted = !isMuted;
+      muteBtn.innerHTML = isMuted ? '🔊 Unmute' : '🔇 Mute';
+      if (isMuted) {
+        stopAllSounds();
+      } else {
+        // Resume sound if character is moving
+        if (currentAnimation === 'Walk') {
+          playSound('walk');
+        } else if (currentAnimation === 'Running') {
+          playSound('run');
+        }
+      }
+    });
+
+    // Initialize volume
+    setVolume(50);
 
     // Wait until model-viewer is ready
     try {
@@ -353,10 +552,18 @@
     const glb = mv.getAttribute('src');
     const usdz = mv.getAttribute('ios-src');
 
-    // Hide loading spinner when model loads
+    // Model loading events
     mv.addEventListener('load', () => {
       loading.style.display = 'none';
-      updateStatus('✓ 3D model loaded successfully', 'success');
+      updateStatus('✓ Animated character loaded successfully', 'success');
+      
+      // List available animations
+      setTimeout(() => {
+        const animations = mv.availableAnimations;
+        if (animations && animations.length > 0) {
+          updateStatus(`🎬 Available animations: ${animations.join(', ')}`, 'info');
+        }
+      }, 1000);
     });
 
     mv.addEventListener('error', (e) => {
@@ -388,7 +595,7 @@
       return `https://arvr.google.com/scene-viewer/1.0?file=${file}&mode=ar_preferred&title=${t}`;
     }
 
-    // Advanced diagnostics
+    // Enhanced diagnostics
     async function runDiagnostics() {
       updateStatus('🔧 Running comprehensive diagnostics...');
       
@@ -396,15 +603,13 @@
       results.push(`User Agent: ${navigator.userAgent}`);
       results.push(`Platform: ${isIOS() ? 'iOS' : isAndroid() ? 'Android' : 'Desktop'}`);
       results.push(`Protocol: ${location.protocol}`);
+      results.push(`Current Animation: ${currentAnimation}`);
+      results.push(`Audio Muted: ${isMuted}`);
+      results.push(`Volume: ${volumeSlider.value}%`);
       
       if (glb) {
         const glbProbe = await probeAsset(glb);
         results.push(`GLB Asset: ${glbProbe.ok ? '✓ Available' : '✗ Failed'} (${glbProbe.status || glbProbe.error})`);
-      }
-      
-      if (usdz) {
-        const usdzProbe = await probeAsset(usdz);
-        results.push(`USDZ Asset: ${usdzProbe.ok ? '✓ Available' : '✗ Failed'} (${usdzProbe.status || usdzProbe.error})`);
       }
 
       try {
@@ -490,10 +695,6 @@
       if (status === 'session-started' && navigator.vibrate) {
         navigator.vibrate([50, 100, 50]);
       }
-    });
-
-    mv.addEventListener('camera-change', () => {
-      updateStatus('📷 Camera position updated');
     });
 
     // Initial diagnostics
