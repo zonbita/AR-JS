@@ -3,27 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Robot AR — Quick Look + Auto Play</title>
+  <title>Tap anywhere → AR (iPhone Quick Look) — Robot Auto Play</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    html,body { height:100%; margin:0; background:#0b0c10; color:#fff; font-family:system-ui,-apple-system,Segoe UI,Roboto; }
-    model-viewer { width:100%; height:100vh; --poster-color:#0b0c10; display:block; }
-    button[slot="ar-button"] {
-      position: absolute; left:50%; bottom:22px; transform:translateX(-50%);
-      padding:10px 16px; border-radius:999px; background:#2563eb; color:#fff; font-weight:600; border:none;
-      box-shadow:0 6px 18px rgba(0,0,0,.25);
+    html,body{height:100%;margin:0;background:#0b0c10;color:#fff;font-family:system-ui,-apple-system;overflow:hidden}
+    model-viewer{width:100%;height:100vh;display:block;--poster-color:#0b0c10}
+    /* instruction overlay */
+    .tap-overlay{
+      position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(180deg, rgba(11,12,16,0.55), rgba(11,12,16,0.45));
+      z-index:20;backdrop-filter: blur(4px);
+      cursor:pointer;user-select:none;
     }
-    .hint { position:fixed; left:12px; bottom:22px; color:#9aa1a9; font-size:13px; }
+    .card{padding:18px 22px;border-radius:12px;background:rgba(255,255,255,0.04);text-align:center}
+    .card h1{margin:0 0 6px;font-size:18px;letter-spacing:0.2px}
+    .card p{margin:0;font-size:13px;color:#b8c0cc}
+    button[slot="ar-button"]{display:none} /* hide built-in button (we auto-enter) */
   </style>
 </head>
 <body>
-
-<!--
-  LƯU Ý:
-  - Mở trang này bằng Safari (không phải Chrome / in-app).
-  - Host file .usdz với MIME type: model/vnd.usdz+zip (Quick Look cần header này).
-  - Demo dưới dùng RobotExpressive từ modelviewer.dev (đã sẵn .glb + .usdz).
--->
 
 <model-viewer id="mv"
   src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
@@ -33,89 +31,107 @@
   ar-modes="quick-look scene-viewer webxr"
   ar-scale="auto"
   camera-controls
-  exposure="1"
-  shadow-intensity="1"
   style="background:transparent;"
 >
-  <!-- Anchor bắt buộc cho iOS Quick Look: phải có <img> là con đầu tiên -->
-  <a slot="ar" rel="ar" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz#allowsContentScaling=0">
-    <img alt="robot preview" src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" style="width:1px;height:1px;object-fit:cover;">
+  <!-- Anchor bắt buộc cho Quick Look: <img> phải là con đầu -->
+  <a slot="ar" id="arLink" rel="ar" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz#allowsContentScaling=0">
+    <img src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" alt="preview" style="width:1px;height:1px;object-fit:cover">
   </a>
 
-  <!-- Nút AR mặc định -->
+  <!-- Giữ nhưng ẩn đi (ta auto kích) -->
   <button slot="ar-button">View in your space</button>
 </model-viewer>
 
-<div class="hint">Mở bằng Safari trên iPhone → bấm "View in your space" để vào AR và play animation.</div>
+<!-- Overlay hướng dẫn: chạm bất kỳ đâu để vào AR -->
+<div id="overlay" class="tap-overlay" role="button" aria-label="Chạm để vào AR">
+  <div class="card">
+    <h1>Chạm bất kỳ chỗ nào để vào AR</h1>
+    <p>Mở bằng Safari trên iPhone → Quick Look sẽ bật và play animation trong AR.</p>
+  </div>
+</div>
 
 <script>
 (function(){
   const mv = document.getElementById('mv');
+  const overlay = document.getElementById('overlay');
+  const arLink = document.getElementById('arLink');
+  let triggered = false;
 
-  // helper log trên console
-  function log(...args){ console.log('[AR]', ...args); }
-
-  // chọn animation ưu tiên khi vào AR
+  // Play preferred animation inside AR (Dance > Wave > first)
   async function startPreferredAnimation() {
     try {
-      // availableAnimations có thể chưa sẵn ngay lập tức: thử nhiều lần ngắn
-      for (let attempt=0; attempt<10; attempt++) {
+      for (let i=0;i<12;i++){
         const anims = mv.availableAnimations || [];
         if (anims.length > 0) {
-          log('Available animations:', anims);
-          // ưu tiên 'Dance' > 'Wave' > first
           const prefer = ['Dance','Wave','Running','Walking'];
-          let chosen = anims.find(a => prefer.includes(a)) || anims[0];
+          const chosen = anims.find(a=>prefer.includes(a)) || anims[0];
           mv.animationName = chosen;
           mv.timeScale = 1;
-          // đảm bảo đang play
           mv.play();
-          log('Play animation:', chosen);
+          console.log('[AR] play animation', chosen);
           return;
         }
-        await new Promise(r => setTimeout(r, 150));
+        await new Promise(r=>setTimeout(r,120));
       }
-      log('No animations detected after retries.');
-    } catch (e) {
-      log('Error play anim:', e);
-    }
+      console.log('[AR] no animations found');
+    } catch(e){ console.warn('[AR] play error', e); }
   }
 
-  // Khi AR session bắt đầu: kích hoạt animation
+  // Khi AR session bắt đầu -> play anim
   mv.addEventListener('ar-status', (e) => {
     const status = e.detail && e.detail.status;
-    log('ar-status', status);
+    console.log('[AR] status', status);
     if (status === 'session-started') {
-      // delay nhỏ để Quick Look đã khởi tạo model
-      setTimeout(() => startPreferredAnimation(), 120);
-      // vibration (nếu có)
-      if (navigator.vibrate) navigator.vibrate(30);
-    }
-    if (status === 'not-presenting' || status === 'failed') {
-      // dừng nếu session kết thúc
-      try { mv.pause(); mv.currentTime = 0; } catch(e){/*ignore*/ }
+      // Delay nhẹ để Quick Look đã load model
+      setTimeout(()=> startPreferredAnimation(), 120);
+      if (navigator.vibrate) navigator.vibrate(20);
+    } else if (status === 'not-presenting' || status === 'failed') {
+      try { mv.pause(); mv.currentTime = 0; } catch(e){}
     }
   });
 
-  // Khi model load xong trên web view, tắt auto animation (chỉ chơi trong AR)
-  mv.addEventListener('load', () => {
-    log('model loaded on page');
-    // ngăn playback trên trang web (chỉ muốn play khi vào AR)
-    try { mv.pause(); mv.animationName = null; } catch(e){/*ignore*/ }
-  });
+  // Khi model load trên trang web, không autoplay trên web view
+  mv.addEventListener('load', ()=> { try{ mv.pause(); mv.animationName = null }catch(e){} });
 
-  // Thêm 1 lần kiểm tra nhanh khi user click nút AR (fallback)
-  const arButton = mv.querySelector('[slot="ar-button"]');
-  if (arButton) {
-    arButton.addEventListener('click', () => log('AR button clicked - opening Quick Look / Scene Viewer / WebXR'));
+  // Function để trigger Quick Look — bằng cách "click" vào anchor (<a rel="ar">)
+  function triggerQuickLook() {
+    if (triggered) return;
+    triggered = true;
+    // Remove overlay quickly so click context remains
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    setTimeout(()=> overlay.remove(), 200);
+
+    // Try to click the anchor which is the recommended way for Quick Look
+    try {
+      arLink.click();
+      console.log('[AR] arLink.click() called');
+    } catch(e){
+      // Fallback: navigate directly to .usdz (still within user gesture)
+      const href = arLink && arLink.href;
+      if (href) {
+        window.location.href = href;
+        console.log('[AR] fallback window.location ->', href);
+      } else {
+        console.warn('[AR] no ar href available');
+      }
+    }
   }
 
-  // Debug nhỏ: show available animations vào console khi sẵn sàng
-  mv.addEventListener('progress', (e) => {
-    if (e.detail && e.detail.totalProgress === 1) {
-      setTimeout(()=> log('Final availableAnimations:', mv.availableAnimations), 200);
-    }
-  });
+  // Accept either touchstart or click. Use capture to ensure we get first gesture.
+  const handler = (ev) => {
+    // ignore multi-touch gestures that might not be intentional
+    if (ev.touches && ev.touches.length>1) return;
+    ev.preventDefault?.();
+    triggerQuickLook();
+  };
+
+  // Listen once for first user gesture on whole document
+  document.addEventListener('touchstart', handler, {passive:false, once:true, capture:true});
+  document.addEventListener('click', handler, {once:true, capture:true});
+
+  // Extra: if overlay tapped directly, also trigger
+  overlay.addEventListener('click', (e)=>{ e.preventDefault(); triggerQuickLook(); }, {once:true});
 
 })();
 </script>
