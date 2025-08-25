@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tap‑to‑Place AR (iPhone + Android) — AR Animation Only</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- Using RobotExpressive model which has multiple animations -->
-  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz" type="model/vnd.usdz+zip" crossorigin>
+  <!-- Using original Astronaut model (more reliable) -->
+  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" type="model/vnd.usdz+zip" crossorigin>
   <style>
     html, body { height: 100%; margin: 0; }
     body { font-family: system-ui, sans-serif; background:#0b0c10; color:#eee; }
@@ -20,27 +20,31 @@
 </head>
 <body>
   <!--
-    IMPORTANT: Replace the src + ios-src below with your own hosted .glb and .usdz files
-    The sandbox 404 happened because /assets/model.glb didn't exist there. Using absolute URLs avoids that.
-    
-    NOTE: Removed 'autoplay' attribute - animation will only play in AR mode
+    IMPORTANT: For iOS Safari AR to work properly:
+    1. Must be served over HTTPS (not HTTP)
+    2. USDZ file must be properly hosted with correct MIME type
+    3. rel="ar" anchor must have an image as first child
+    4. Works only in Safari browser (not in-app browsers)
+    5. Requires iPhone 6s/7+ or newer with iOS 12+
   -->
   <model-viewer
     id="viewer"
-    src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
-    ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
-    alt="Animated Robot"
+    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+    ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
+    alt="Astronaut"
     ar
     ar-modes="webxr scene-viewer quick-look"
     ar-placement="floor"
-    ar-scale="fixed"
+    ar-scale="auto"
     camera-controls
     tone-mapping="aces"
     shadow-intensity="1"
     interaction-prompt="auto"
   >
-    <!-- model-viewer uses an <a rel="ar"> anchor in the slot="ar" for iOS Quick Look -->
-    <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
+    <!-- CRITICAL: iOS Quick Look anchor MUST have an image as first child -->
+    <a id="platformArLink" slot="ar" rel="ar" style="display:none">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" alt="AR Preview" style="width:1px;height:1px;">
+    </a>
 
     <!-- Keep the built-in AR button inside model-viewer as a visual affordance -->
     <button slot="ar-button" id="arButton">View in your space</button>
@@ -53,7 +57,7 @@
   </div>
 
   <div class="diag" id="diag">Initializing…</div>
-  <div class="notes">Notes: Animation will automatically play when entering AR mode. Replace the <code>src</code>/<code>ios-src</code> with your own HTTPS-hosted files for production.</div>
+  <div class="notes">Notes: For iPhone AR to work: 1) Use Safari browser (not Chrome/in-app browsers), 2) Must be HTTPS, 3) Tap "View in your space" button. Animation will auto-play in AR mode.</div>
 
   <script>
   (async function init() {
@@ -85,11 +89,15 @@
     const glb = mv.getAttribute('src');
     const usdz = mv.getAttribute('ios-src');
 
-    // Set the Quick Look anchor href (model-viewer copies from ios-src normally, but we keep it explicit)
+    // Set the Quick Look anchor href with proper image child (REQUIRED for iOS)
     if (platformArLink && usdz) {
       try {
-        platformArLink.href = new URL(usdz, location.href).href + '#allowsContentScaling=0';
-      } catch (e) { /* ignore */ }
+        const usdzUrl = new URL(usdz, location.href).href + '#allowsContentScaling=0';
+        platformArLink.href = usdzUrl;
+        log('iOS Quick Look URL set: ' + usdzUrl);
+      } catch (e) { 
+        log('Error setting Quick Look URL:', e?.message || e);
+      }
     }
 
     // Utility: probe asset with HEAD (may be blocked by CORS on some servers)
@@ -195,7 +203,7 @@
         log('navigator.xr not available');
       }
 
-      log('Diagnostics complete. Using RobotExpressive model with animations. Try AR mode!');
+      log('Diagnostics complete. Using Astronaut model. For iOS AR: Must use Safari browser, not in-app browser!');
     }
 
     // wire diagnostic button
@@ -226,9 +234,11 @@
         // If on iOS, use the Quick Look anchor (some in-app browsers still block this)
         if (isIOS()) {
           if (platformArLink && platformArLink.href) {
-            log('Opening iOS Quick Look via anchor');
+            log('Opening iOS Quick Look via anchor click');
             platformArLink.click();
             return;
+          } else {
+            log('iOS detected but Quick Look anchor not ready');
           }
         }
 
