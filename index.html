@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Robot Expressive Web + AR</title>
+<title>Robot AR + Sound</title>
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <style>
   html, body { height:100%; margin:0; background:#0b0c10; color:#fff; font-family:system-ui,sans-serif;}
@@ -36,6 +36,8 @@
   </a>
 </model-viewer>
 
+<audio id="robot-sound" src="robot-sound.mp3" loop></audio>
+
 <div id="overlay">
   <div>Tap anywhere to enter AR</div>
   <p>iPhone: Safari only | Android: Chrome</p>
@@ -46,6 +48,7 @@
   const mv = document.getElementById('mv');
   const overlay = document.getElementById('overlay');
   const arLink = mv.querySelector('a[rel="ar"]');
+  const audio = document.getElementById('robot-sound');
 
   const isIOS = () => /(iPhone|iPad|iPod)/i.test(navigator.userAgent) && !window.MSStream;
   const isAndroid = () => /Android/i.test(navigator.userAgent);
@@ -61,23 +64,31 @@
       mv.loop = true;
       if(mv.play) mv.play();
       console.log("[WEB] Playing animation:", chosen);
-    } else {
-      console.warn("[WEB] No animations found");
     }
   });
 
-  // Handle AR session status
+  // Handle AR session status (WebXR)
   mv.addEventListener("ar-status", e=>{
     if(e.detail.status==="session-started"){
       if(navigator.vibrate) navigator.vibrate(20);
+      audio.currentTime = 0;
+      audio.play().catch(()=>console.log("Audio blocked"));
     } else if(e.detail.status==="not-presenting" || e.detail.status==="failed"){
+      audio.pause();
+      audio.currentTime = 0;
       try{ mv.pause(); mv.currentTime=0;} catch(e){}
     }
   });
 
-  // Trigger AR on user tap
+  // Trigger AR and audio on user tap
   function triggerAR(){
     overlay.remove();
+
+    // Start sound
+    audio.currentTime = 0;
+    audio.play().catch(()=>console.log("Audio blocked"));
+
+    // Activate AR
     if(mv.canActivateAR){
       mv.activateAR().catch(()=>console.log("[AR] activateAR failed"));
       return;
@@ -87,7 +98,6 @@
       return;
     }
     if(isAndroid() && mv.src){ 
-      // Fallback: reload GLB to trigger AR viewer
       window.location.href = mv.src; 
       return;
     }
