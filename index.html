@@ -23,21 +23,21 @@
     IMPORTANT: Replace the src + ios-src below with your own hosted .glb and .usdz files
     The sandbox 404 happened because /assets/model.glb didn't exist there. Using absolute URLs avoids that.
   -->
-  <model-viewer
-    id="viewer"
-    src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
-    ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
-    alt="Robot"
-    ar
-    ar-modes="webxr scene-viewer quick-look"
-    ar-placement="floor"
-    ar-scale="fixed"
-    camera-controls
-    autoplay
-    animation-loop
-    shadow-intensity="1"
-    tone-mapping="aces"
-  >
+<model-viewer
+  id="viewer"
+  src="https://modelviewer.dev/assets/RobotExpressive.glb"
+  ios-src="https://modelviewer.dev/assets/RobotExpressive.usdz"
+  alt="Robot"
+  ar
+  ar-modes="webxr scene-viewer quick-look"
+  ar-placement="floor"
+  ar-scale="fixed"
+  camera-controls
+  autoplay
+  animation-loop
+  shadow-intensity="1"
+  tone-mapping="aces"
+>
     <!-- model-viewer uses an <a rel="ar"> anchor in the slot="ar" for iOS Quick Look -->
     <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
 
@@ -276,3 +276,4 @@
 </script>
 </body>
 </html>
+
