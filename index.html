@@ -19,7 +19,7 @@
 
 <model-viewer id="mv"
   src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
-  ios-src="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz#custom=https://gamek.vn"
+  ios-src="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz"
   alt="Robot Expressive"
   ar
   ar-modes="quick-look scene-viewer webxr"
@@ -27,7 +27,11 @@
   camera-controls
   shadow-intensity="1"
 >
-  <a slot="ar" rel="ar" href="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz"></a>
+  <a slot="ar" rel="ar" href="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz">
+<audio autoplay loop>
+  <source src="https://raw.githubusercontent.com/zonbita/AR-JS/main/lactroi.mp3" type="audio/mpeg">
+</audio>
+  </a>
 </model-viewer>
 
 <audio id="robot-sound" src="https://raw.githubusercontent.com/zonbita/AR-JS/main/lactroi.mp3" loop></audio>
@@ -84,5 +88,6 @@ if(isIOS()){
 
 </body>
 </html>
+
 
 
