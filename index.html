@@ -21,7 +21,7 @@
 
 <model-viewer id="mv"
   src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
-  ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
+  ios-src="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz"
   alt="Robot Expressive"
   ar
   ar-modes="quick-look scene-viewer webxr"
@@ -31,7 +31,7 @@
   autoplay
   loop
 >
-  <a slot="ar" rel="ar" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz">
+  <a slot="ar" rel="ar" href="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz">
     <img src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" width="1" height="1" alt="Robot Preview">
   </a>
 </model-viewer>
@@ -47,24 +47,26 @@
   const overlay = document.getElementById('overlay');
   const arLink = mv.querySelector('a[rel="ar"]');
 
-  const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isIOS = () => /(iPhone|iPad|iPod)/i.test(navigator.userAgent) && !window.MSStream;
   const isAndroid = () => /Android/i.test(navigator.userAgent);
 
-  // Auto-play and loop animation in web
+  // Play animation when model is loaded
   mv.addEventListener('load', async () => {
     await mv.updateComplete;
     const anims = mv.availableAnimations || [];
-    if(anims.length>0){
+    if(anims.length > 0){
       const chosen = anims.includes("Dance") ? "Dance" : anims[0];
       mv.animationName = chosen;
       mv.timeScale = 1;
       mv.loop = true;
-      mv.play();
+      if(mv.play) mv.play();
       console.log("[WEB] Playing animation:", chosen);
+    } else {
+      console.warn("[WEB] No animations found");
     }
   });
 
-  // AR session start
+  // Handle AR session status
   mv.addEventListener("ar-status", e=>{
     if(e.detail.status==="session-started"){
       if(navigator.vibrate) navigator.vibrate(20);
@@ -76,9 +78,19 @@
   // Trigger AR on user tap
   function triggerAR(){
     overlay.remove();
-    if(mv.canActivateAR){ mv.activateAR().catch(()=>console.log("[AR] activateAR failed")); return;}
-    if(isIOS() && arLink && arLink.href){ arLink.click(); return;}
-    if(isAndroid() && mv.src){ window.location.href = mv.src; return;}
+    if(mv.canActivateAR){
+      mv.activateAR().catch(()=>console.log("[AR] activateAR failed"));
+      return;
+    }
+    if(isIOS() && arLink && arLink.href){ 
+      arLink.click(); 
+      return;
+    }
+    if(isAndroid() && mv.src){ 
+      // Fallback: reload GLB to trigger AR viewer
+      window.location.href = mv.src; 
+      return;
+    }
   }
 
   overlay.addEventListener("click", triggerAR, {once:true});
