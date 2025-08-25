@@ -72,10 +72,10 @@
     overlay.remove();
 
     if(isIOS() && arLink && arLink.href){
-      // iOS: Play audio first, then open Quick Look
+      // iOS: play audio first (must be inside user gesture)
       audio.currentTime = 0;
       audio.play().catch(()=>console.log("[iOS] Audio blocked"));
-      arLink.click();
+      arLink.click(); // then open Quick Look
       return;
     }
 
@@ -93,7 +93,7 @@
   overlay.addEventListener("click", triggerAR, {once:true});
   document.addEventListener("touchstart", triggerAR, {once:true});
 
-  // WebXR: Play audio when AR session starts
+  // WebXR: play audio when AR session starts
   mv.addEventListener("ar-status", e=>{
     if(e.detail.status==="session-started"){
       if(navigator.vibrate) navigator.vibrate(20);
