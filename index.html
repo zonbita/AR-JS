@@ -3,50 +3,309 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tap-to-Place AR (iPhone + Android) — RobotExpressive</title>
+  <title>Enhanced AR Experience — Tap-to-Place 3D Models</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- Preload the USDZ to avoid 404 -->
-  <link rel="preload" as="fetch" href="https://raw.githubusercontent.com/google/model-viewer/master/packages/shared-assets/models/RobotExpressive.usdz" type="model/vnd.usdz+zip" crossorigin>
+  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" type="model/vnd.usdz+zip" crossorigin>
   <style>
-    html, body { height: 100%; margin: 0; }
-    body { font-family: system-ui, sans-serif; background:#0b0c10; color:#eee; }
-    model-viewer { width: 100%; height: 100vh; --poster-color: #0b0c10; }
-    .controls { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 3; display:flex; gap:8px; }
-    .controls button, .controls a { padding: 10px 14px; border-radius: 999px; border: none; background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.25); text-decoration:none; }
-    .controls .secondary { background: rgba(255,255,255,.06); color:#e6edf3; box-shadow:none; border:1px solid rgba(255,255,255,.06); }
-    .diag { position: fixed; right: 10px; bottom: 10px; font-size: 12px; color:#cbd5e1; opacity:.95; max-width: 46vw; background: rgba(0,0,0,0.45); padding:8px 10px; border-radius:8px; }
-    .notes { position: fixed; left: 10px; bottom: 10px; font-size: 12px; color:#9aa1a9; max-width: 46vw; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: linear-gradient(135deg, #0a0b14 0%, #1a1d29 100%);
+      color: #ffffff;
+      overflow: hidden;
+    }
+
+    /* Animated background particles */
+    .bg-particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(37, 99, 235, 0.6);
+      border-radius: 50%;
+      animation: float 8s infinite linear;
+    }
+    
+    @keyframes float {
+      0% { transform: translateY(100vh) translateX(0px); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
+    }
+    
+    model-viewer { 
+      width: 100%; 
+      height: 100vh; 
+      --poster-color: transparent;
+      z-index: 2;
+      position: relative;
+    }
+    
+    .header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .header p {
+      margin: 8px 0 0 0;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+    }
+
+    .controls { 
+      position: absolute; 
+      left: 50%; 
+      bottom: 40px; 
+      transform: translateX(-50%); 
+      z-index: 10; 
+      display: flex; 
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .primary-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .secondary-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .btn {
+      padding: 14px 24px;
+      border-radius: 50px;
+      border: none;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .btn:hover::before {
+      left: 100%;
+    }
+    
+    .btn-primary { 
+      background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+      color: white;
+      box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4);
+      transform: translateY(0);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.6);
+    }
+    
+    .btn-secondary { 
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 14px;
+      padding: 10px 16px;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .status-panel { 
+      position: fixed; 
+      top: 20px;
+      right: 20px; 
+      font-size: 12px; 
+      color: #e2e8f0; 
+      max-width: 320px; 
+      background: rgba(0, 0, 0, 0.8); 
+      padding: 16px; 
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      z-index: 5;
+      font-family: 'Monaco', 'Consolas', monospace;
+      line-height: 1.4;
+    }
+    
+    .notes-panel { 
+      position: fixed; 
+      bottom: 20px; 
+      left: 20px; 
+      font-size: 12px; 
+      color: rgba(255, 255, 255, 0.7); 
+      max-width: 280px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 12px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      z-index: 5;
+    }
+    
+    .loading-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .ar-icon::before { content: "📱"; }
+    .diag-icon::before { content: "🔧"; }
+    .link-icon::before { content: "🔗"; }
+    
+    @media (max-width: 640px) {
+      .header h1 { font-size: 20px; }
+      .btn { padding: 12px 18px; font-size: 14px; }
+      .controls { bottom: 30px; }
+      .status-panel { 
+        top: 10px; 
+        right: 10px; 
+        left: 10px; 
+        max-width: none; 
+        font-size: 11px; 
+      }
+      .notes-panel {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        max-width: none;
+      }
+    }
+    
+    /* Pulse animation for AR button */
+    .btn-primary {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4); }
+      50% { box-shadow: 0 8px 32px rgba(59, 130, 246, 0.6); }
+      100% { box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4); }
+    }
   </style>
 </head>
 <body>
+  <div class="bg-particles" id="particles"></div>
+  
+  <div class="header">
+    <h1>AR Model Viewer</h1>
+    <p>Tap "View in your space" to place 3D models in augmented reality</p>
+  </div>
+
+  <div class="loading-indicator" id="loading">
+    <div class="spinner"></div>
+  </div>
+
   <model-viewer
     id="viewer"
-    src="https://raw.githubusercontent.com/google/model-viewer/master/packages/shared-assets/models/RobotExpressive.glb"
-    ios-src="https://raw.githubusercontent.com/google/model-viewer/master/packages/shared-assets/models/RobotExpressive.usdz"
-    alt="Animated Robot"
+    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+    ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
+    alt="Astronaut 3D Model"
     ar
     ar-modes="webxr scene-viewer quick-look"
     ar-placement="floor"
     ar-scale="fixed"
     camera-controls
     autoplay
-    animation-loop
     tone-mapping="aces"
     shadow-intensity="1"
     interaction-prompt="auto"
+    environment-image="neutral"
+    exposure="1"
   >
     <a id="platformArLink" slot="ar" rel="ar" style="display:none"></a>
-    <button slot="ar-button" id="arButton">View in your space</button>
+    <button slot="ar-button" id="arButton" style="display:none">View in AR</button>
   </model-viewer>
 
   <div class="controls" role="region" aria-label="AR controls">
-    <button id="btnAR" type="button">View in your space</button>
-    <button id="btnDiag" class="secondary" type="button">Run diagnostics</button>
-    <a id="manualScene" class="secondary" href="#">Open Scene Viewer</a>
+    <div class="primary-controls">
+      <button id="btnAR" class="btn btn-primary" type="button">
+        <span class="ar-icon"></span>View in your space
+      </button>
+    </div>
+    <div class="secondary-controls">
+      <button id="btnDiag" class="btn btn-secondary" type="button">
+        <span class="diag-icon"></span>Diagnostics
+      </button>
+      <a id="manualScene" class="btn btn-secondary" href="#">
+        <span class="link-icon"></span>Scene Viewer
+      </a>
+    </div>
   </div>
 
-  <div class="diag" id="diag">Initializing…</div>
-  <div class="notes">Notes: This page now loads <code>RobotExpressive.glb</code> which has multiple animations. Autoplay is enabled.</div>
+  <div class="status-panel" id="status">Initializing AR experience...</div>
+  <div class="notes-panel">
+    <strong>Instructions:</strong><br>
+    • iPhone: Uses ARKit Quick Look<br>
+    • Android: Uses ARCore Scene Viewer<br>
+    • Make sure you're on HTTPS for AR features
+  </div>
 
   <script>
   (async function init() {
@@ -55,80 +314,190 @@
     const btnDiag = document.getElementById('btnDiag');
     const manualScene = document.getElementById('manualScene');
     const platformArLink = document.getElementById('platformArLink');
-    const diag = document.getElementById('diag');
+    const status = document.getElementById('status');
+    const loading = document.getElementById('loading');
 
-    const isAndroid = () => /Android/i.test(navigator.userAgent);
-    const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    function log(...parts) {
-      const text = parts.map(p => (typeof p === 'object' ? JSON.stringify(p) : String(p))).join(' ');
-      console.log('[AR Debug]', text);
-      diag.textContent = text;
+    // Create floating particles
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 15; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 8 + 's';
+        particle.style.animationDuration = (8 + Math.random() * 4) + 's';
+        container.appendChild(particle);
+      }
     }
 
-    await customElements.whenDefined('model-viewer');
-    log('model-viewer defined');
+    createParticles();
+
+    const isAndroid = () => /Android/i.test(navigator.userAgent);
+    const isChrome = () => /Chrome\//i.test(navigator.userAgent) && !/CriOS/.test(navigator.userAgent);
+    const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    function updateStatus(message, type = 'info') {
+      console.log('[AR Debug]', message);
+      const timestamp = new Date().toLocaleTimeString();
+      status.innerHTML = `<div style="color: ${type === 'error' ? '#f87171' : type === 'success' ? '#4ade80' : '#60a5fa'}">[${timestamp}]</div>${message}`;
+    }
+
+    // Wait until model-viewer is ready
+    try {
+      await customElements.whenDefined('model-viewer');
+      updateStatus('✓ Model viewer initialized', 'success');
+    } catch (e) {
+      updateStatus('✗ Error initializing: ' + (e?.message || e), 'error');
+    }
 
     const glb = mv.getAttribute('src');
     const usdz = mv.getAttribute('ios-src');
 
+    // Hide loading spinner when model loads
+    mv.addEventListener('load', () => {
+      loading.style.display = 'none';
+      updateStatus('✓ 3D model loaded successfully', 'success');
+    });
+
+    mv.addEventListener('error', (e) => {
+      loading.style.display = 'none';
+      updateStatus('✗ Model loading failed: ' + (e.detail?.message || 'Unknown error'), 'error');
+    });
+
+    // Setup Quick Look for iOS
     if (platformArLink && usdz) {
       try {
         platformArLink.href = new URL(usdz, location.href).href + '#allowsContentScaling=0';
-      } catch (e) {}
+      } catch (e) { /* ignore */ }
     }
 
-    // Animations: cycle through them every 5s
-    mv.addEventListener("load", () => {
-      if (mv.availableAnimations.length > 0) {
-        let current = 0;
-        mv.animationName = mv.availableAnimations[current];
-        log("Playing animation: " + mv.animationName);
-
-        setInterval(() => {
-          current = (current + 1) % mv.availableAnimations.length;
-          mv.animationName = mv.availableAnimations[current];
-          log("Switched to animation: " + mv.animationName);
-        }, 5000);
+    // Asset probing utility
+    async function probeAsset(url) {
+      try {
+        const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        return { ok: res.ok, status: res.status, type: res.headers.get('content-type') };
+      } catch (err) {
+        return { ok: false, error: err.message || String(err) };
       }
-    });
-
-    // Diagnostics runner
-    async function runDiagnostics() {
-      log('UserAgent: ' + navigator.userAgent);
-      log('GLB: ' + glb);
-      log('USDZ: ' + usdz);
-      log('Diagnostics complete. Try pressing "View in your space".');
     }
 
+    // Scene Viewer URL builder
+    function sceneViewerUrlFor(glbUrl, title) {
+      const file = encodeURIComponent(new URL(glbUrl, location.href).href);
+      const t = encodeURIComponent(title || '3D Model');
+      return `https://arvr.google.com/scene-viewer/1.0?file=${file}&mode=ar_preferred&title=${t}`;
+    }
+
+    // Advanced diagnostics
+    async function runDiagnostics() {
+      updateStatus('🔧 Running comprehensive diagnostics...');
+      
+      const results = [];
+      results.push(`User Agent: ${navigator.userAgent}`);
+      results.push(`Platform: ${isIOS() ? 'iOS' : isAndroid() ? 'Android' : 'Desktop'}`);
+      results.push(`Protocol: ${location.protocol}`);
+      
+      if (glb) {
+        const glbProbe = await probeAsset(glb);
+        results.push(`GLB Asset: ${glbProbe.ok ? '✓ Available' : '✗ Failed'} (${glbProbe.status || glbProbe.error})`);
+      }
+      
+      if (usdz) {
+        const usdzProbe = await probeAsset(usdz);
+        results.push(`USDZ Asset: ${usdzProbe.ok ? '✓ Available' : '✗ Failed'} (${usdzProbe.status || usdzProbe.error})`);
+      }
+
+      try {
+        if (typeof mv.canActivateAR !== 'undefined') {
+          results.push(`Model Viewer AR: ${mv.canActivateAR ? '✓ Ready' : '✗ Not Available'}`);
+        }
+      } catch (e) { /* ignore */ }
+
+      if (navigator.xr && navigator.xr.isSessionSupported) {
+        try {
+          const supported = await navigator.xr.isSessionSupported('immersive-ar');
+          results.push(`WebXR AR: ${supported ? '✓ Supported' : '✗ Not Supported'}`);
+        } catch (err) {
+          results.push(`WebXR AR: ✗ Error (${err?.message || err})`);
+        }
+      } else {
+        results.push('WebXR AR: ✗ Not Available');
+      }
+
+      updateStatus(results.join('<br>'));
+    }
+
+    // Event handlers
     btnDiag.addEventListener('click', runDiagnostics);
 
-    manualScene.href = glb || '#';
+    manualScene.href = glb ? sceneViewerUrlFor(glb, mv.getAttribute('alt')) : '#';
+    manualScene.addEventListener('click', () => {
+      updateStatus('🔗 Opening Scene Viewer manually...');
+    });
 
+    // Enhanced AR activation
     btnAR.addEventListener('click', async (ev) => {
       ev.preventDefault();
-      log('AR button clicked — checking capabilities...');
-      if (mv.canActivateAR) {
-        await mv.activateAR();
-        return;
+      updateStatus('🚀 Launching AR experience...');
+
+      try {
+        if (mv.canActivateAR) {
+          updateStatus('✓ Activating AR via model-viewer...', 'success');
+          await mv.activateAR();
+          return;
+        }
+
+        if (isIOS() && platformArLink && platformArLink.href) {
+          updateStatus('📱 Opening iOS Quick Look...', 'success');
+          platformArLink.click();
+          return;
+        }
+
+        if (navigator.xr && navigator.xr.isSessionSupported) {
+          try {
+            const supported = await navigator.xr.isSessionSupported('immersive-ar');
+            if (supported) {
+              updateStatus('🥽 Starting WebXR AR session...', 'success');
+              await mv.activateAR();
+              return;
+            }
+          } catch (e) {
+            updateStatus('WebXR error: ' + (e?.message || e), 'error');
+          }
+        }
+
+        if (isAndroid() && glb) {
+          const url = sceneViewerUrlFor(glb, mv.getAttribute('alt'));
+          updateStatus('🤖 Opening Android Scene Viewer...', 'success');
+          window.open(url, '_self');
+          return;
+        }
+
+        updateStatus('❌ AR not supported on this device/browser. Try Safari on iOS or Chrome on Android.', 'error');
+      } catch (err) {
+        updateStatus('❌ AR launch failed: ' + (err?.message || err), 'error');
       }
-      if (isIOS() && platformArLink && platformArLink.href) {
-        platformArLink.click();
-        return;
-      }
-      if (isAndroid() && glb) {
-        window.open(`https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_preferred`, '_self');
-        return;
-      }
-      log('AR not available on this device.');
     });
 
+    // Model-viewer event listeners
     mv.addEventListener('ar-status', (e) => {
-      const { status } = e.detail || {};
-      log('ar-status: ' + status);
+      const { status, reason } = e.detail || {};
+      let message = `AR Status: ${status}`;
+      if (reason) message += ` (${reason})`;
+      
+      updateStatus(message, status === 'session-started' ? 'success' : 'info');
+      
+      if (status === 'session-started' && navigator.vibrate) {
+        navigator.vibrate([50, 100, 50]);
+      }
     });
 
-    await runDiagnostics();
+    mv.addEventListener('camera-change', () => {
+      updateStatus('📷 Camera position updated');
+    });
+
+    // Initial diagnostics
+    setTimeout(runDiagnostics, 1000);
   })();
   </script>
 </body>
