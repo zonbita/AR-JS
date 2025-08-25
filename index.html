@@ -21,7 +21,7 @@
 
 <model-viewer id="mv"
   src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
-  ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
+  ios-src="https://yourdomain.com/RobotExpressive.usdz"
   alt="Robot Expressive"
   ar
   ar-modes="quick-look scene-viewer webxr"
@@ -29,10 +29,10 @@
   camera-controls
   shadow-intensity="1"
 >
-  <a slot="ar" id="arLink" rel="ar" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz#allowsContentScaling=0">
-    <img src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" style="width:1px;height:1px;">
+  <!-- iOS Quick Look anchor -->
+  <a slot="ar" rel="ar" href="https://yourdomain.com/RobotExpressive.usdz">
+    <img src="https://modelviewer.dev/assets/ShopifyModels/RobotExpressive.webp" width="1" height="1" alt="Robot AR Preview">
   </a>
-  <button slot="ar-button">View in your space</button>
 </model-viewer>
 
 <div id="overlay">
@@ -44,11 +44,12 @@
 (async function(){
   const mv = document.getElementById('mv');
   const overlay = document.getElementById('overlay');
-  const arLink = document.getElementById('arLink');
+  const arLink = mv.querySelector('a[rel="ar"]');
 
-  function isIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent);}
-  function isAndroid(){ return /Android/i.test(navigator.userAgent);}
+  const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = () => /Android/i.test(navigator.userAgent);
 
+  // Play animation (only works on GLB / WebXR)
   async function playAnimation(){
     await mv.updateComplete;
     const anims = mv.availableAnimations || [];
@@ -62,6 +63,7 @@
     }
   }
 
+  // Listen for AR session start
   mv.addEventListener("ar-status", e=>{
     if(e.detail.status==="session-started"){
       setTimeout(playAnimation,200);
@@ -71,8 +73,10 @@
     }
   });
 
+  // Pause animation on load
   mv.addEventListener("load", ()=>{ mv.pause(); mv.animationName=null; });
 
+  // Trigger AR via overlay tap
   function triggerAR(){
     overlay.remove();
     if(mv.canActivateAR){ mv.activateAR().catch(()=>console.log("[AR] activateAR failed")); return;}
