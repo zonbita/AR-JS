@@ -39,7 +39,7 @@
 <audio id="robot-sound" src="https://raw.githubusercontent.com/zonbita/AR-JS/main/lactroi.mp3" loop></audio>
 
 <div id="overlay">
-  <div>Tap anywhere to enter AR</div>
+  <div>Tap anywhere to enter AR and play music</div>
   <p>iPhone: Safari only | Android: Chrome</p>
 </div>
 
@@ -53,7 +53,7 @@
   const isIOS = () => /(iPhone|iPad|iPod)/i.test(navigator.userAgent) && !window.MSStream;
   const isAndroid = () => /Android/i.test(navigator.userAgent);
 
-  // Play animation when model is loaded
+  // Play animation when model loads
   mv.addEventListener('load', async () => {
     await mv.updateComplete;
     const anims = mv.availableAnimations || [];
@@ -67,27 +67,23 @@
     }
   });
 
-  // Trigger AR on tap
+  // Trigger AR and audio on user tap
   function triggerAR(){
     overlay.remove();
 
-    // Activate AR
+    if(isIOS() && arLink && arLink.href){
+      // iOS: Play audio first, then open Quick Look
+      audio.currentTime = 0;
+      audio.play().catch(()=>console.log("[iOS] Audio blocked"));
+      arLink.click();
+      return;
+    }
+
+    // Android / WebXR
     if(mv.canActivateAR){
       mv.activateAR().catch(()=>console.log("[AR] activateAR failed"));
       return;
     }
-
-    if(isIOS() && arLink && arLink.href){
-      // Open Quick Look
-      arLink.click();
-      // Play audio shortly after AR opens (Quick Look doesn't provide placement event)
-      setTimeout(()=>{
-        audio.currentTime = 0;
-        audio.play().catch(()=>console.log("[iOS] Audio blocked"));
-      }, 1000); // adjust delay if needed
-      return;
-    }
-
     if(isAndroid() && mv.src){
       window.location.href = mv.src;
       return;
@@ -97,7 +93,7 @@
   overlay.addEventListener("click", triggerAR, {once:true});
   document.addEventListener("touchstart", triggerAR, {once:true});
 
-  // WebXR: play sound when session actually starts
+  // WebXR: Play audio when AR session starts
   mv.addEventListener("ar-status", e=>{
     if(e.detail.status==="session-started"){
       if(navigator.vibrate) navigator.vibrate(20);
