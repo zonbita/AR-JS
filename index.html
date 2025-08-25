@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tap‑to‑Place AR (iPhone + Android) — AR Animation Only</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- Using original Astronaut model (more reliable) -->
-  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" type="model/vnd.usdz+zip" crossorigin>
+  <!-- Using RobotExpressive model with multiple animations -->
+  <link rel="preload" as="fetch" href="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz" type="model/vnd.usdz+zip" crossorigin>
   <style>
     html, body { height: 100%; margin: 0; }
     body { font-family: system-ui, sans-serif; background:#0b0c10; color:#eee; }
@@ -29,9 +29,9 @@
   -->
   <model-viewer
     id="viewer"
-    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
-    ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
-    alt="Astronaut"
+    src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
+    ios-src="https://modelviewer.dev/shared-assets/models/RobotExpressive.usdz"
+    alt="Animated Robot"
     ar
     ar-modes="webxr scene-viewer quick-look"
     ar-placement="floor"
@@ -57,7 +57,7 @@
   </div>
 
   <div class="diag" id="diag">Initializing…</div>
-  <div class="notes">Notes: For iPhone AR to work: 1) Use Safari browser (not Chrome/in-app browsers), 2) Must be HTTPS, 3) Tap "View in your space" button. Animation will auto-play in AR mode.</div>
+  <div class="notes">Notes: Robot will dance/wave automatically in AR! For iPhone: Use Safari browser (not Chrome/in-app browsers), tap "View in your space". Static in web view, animated in AR.</div>
 
   <script>
   (async function init() {
@@ -125,33 +125,44 @@
       return `intent://arvr.google.com/scene-viewer/1.0?file=${file}&mode=ar_preferred&title=${t}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
     }
 
-    // Animation control functions
+    // Animation control functions with better robot animation handling
     function startAnimation() {
       try {
-        // Wait a moment for model to be fully loaded
+        log('Attempting to start animation...');
+        
+        // Check if model is loaded first
+        if (!mv.model) {
+          log('Model not loaded yet, retrying in 500ms');
+          setTimeout(startAnimation, 500);
+          return;
+        }
+
+        // Wait a moment for model to be fully ready
         setTimeout(() => {
-          if (mv.availableAnimations && mv.availableAnimations.length > 0) {
-            // Use a default animation or the first available one
-            const animToPlay = mv.availableAnimations.includes('Dance') ? 'Dance' : 
-                              mv.availableAnimations.includes('Wave') ? 'Wave' :
-                              mv.availableAnimations[0];
+          const animations = mv.availableAnimations;
+          log('Available animations:', JSON.stringify(animations));
+          
+          if (animations && animations.length > 0) {
+            // Try different robot animations in order of preference
+            let animToPlay = null;
+            
+            if (animations.includes('Dance')) animToPlay = 'Dance';
+            else if (animations.includes('Wave')) animToPlay = 'Wave';
+            else if (animations.includes('Running')) animToPlay = 'Running';
+            else if (animations.includes('Walking')) animToPlay = 'Walking';
+            else animToPlay = animations[0]; // Use first available
             
             mv.animationName = animToPlay;
+            mv.timeScale = 1; // Normal speed
             mv.play();
-            log('Animation started in AR mode: ' + animToPlay);
-            log('All available animations: ' + JSON.stringify(mv.availableAnimations));
+            
+            log('Started animation: ' + animToPlay);
+            log('Animation playing:', !mv.paused);
           } else {
-            log('No animations available to play. Available:', mv.availableAnimations);
-            // Force check again after a delay
-            setTimeout(() => {
-              if (mv.availableAnimations && mv.availableAnimations.length > 0) {
-                mv.animationName = mv.availableAnimations[0];
-                mv.play();
-                log('Delayed animation start: ' + mv.animationName);
-              }
-            }, 500);
+            log('No animations found. Retrying in 1 second...');
+            setTimeout(startAnimation, 1000);
           }
-        }, 200);
+        }, 300);
       } catch (e) {
         log('Error starting animation:', e?.message || e);
       }
@@ -159,9 +170,11 @@
 
     function stopAnimation() {
       try {
-        mv.pause();
-        mv.currentTime = 0; // Reset to beginning
-        log('Animation stopped - exited AR mode');
+        if (mv.animationName) {
+          mv.pause();
+          mv.currentTime = 0; // Reset to beginning
+          log('Animation stopped and reset');
+        }
       } catch (e) {
         log('Error stopping animation:', e?.message || e);
       }
@@ -203,7 +216,7 @@
         log('navigator.xr not available');
       }
 
-      log('Diagnostics complete. Using Astronaut model. For iOS AR: Must use Safari browser, not in-app browser!');
+      log('Diagnostics complete. Robot model loaded - animations will auto-play in AR! Use Safari on iPhone.');
     }
 
     // wire diagnostic button
@@ -300,17 +313,25 @@
 
     // Additional event listeners to ensure animation control
     mv.addEventListener('load', () => {
-      log('Model loaded. Available animations:', mv.availableAnimations);
-      // Wait a bit for animations to be fully parsed
+      log('Model loaded. Checking for animations...');
       setTimeout(() => {
-        log('Delayed check - Available animations:', mv.availableAnimations);
-      }, 1000);
+        log('Available animations after load:', JSON.stringify(mv.availableAnimations));
+        // Ensure model starts static (no autoplay)
+        if (mv.animationName) {
+          mv.pause();
+          mv.animationName = null;
+        }
+      }, 500);
     });
 
     // Listen for when animations are ready
     mv.addEventListener('progress', (e) => {
-      if (e.detail.totalProgress === 1) {
-        log('Model fully loaded. Animations:', mv.availableAnimations);
+      const progress = e.detail.totalProgress;
+      log('Loading progress:', Math.round(progress * 100) + '%');
+      if (progress === 1) {
+        setTimeout(() => {
+          log('Model fully loaded. Final animation check:', JSON.stringify(mv.availableAnimations));
+        }, 200);
       }
     });
 
