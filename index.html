@@ -4,14 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="theme-color" content="#0b0c10"/>
-  <title>Robot AR + Sound (Merged)</title>
+  <title>Robot AR + Sound (Kenh14.vn)</title>
 
   <!-- model-viewer -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
   <style>
     :root { color-scheme: dark; }
-    html, body { height: 100%; margin: 0; background: #0b0c10; color: #fff; font-family: system-ui, -apple-system, Roboto, 'Segoe UI', Arial; }
+    html, body {
+      height: 100%; margin: 0;
+      background: #0b0c10; color: #fff;
+      font-family: system-ui, -apple-system, Roboto, 'Segoe UI', Arial;
+    }
     .wrap { position: relative; height: 100vh; overflow: hidden; }
 
     model-viewer {
@@ -37,7 +41,10 @@
       border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(6px);
       z-index: 20;
     }
-    .audio-controls button { background: transparent; border: 1px solid rgba(255,255,255,0.08); color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+    .audio-controls button {
+      background: transparent; border: 1px solid rgba(255,255,255,0.08);
+      color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+    }
     .audio-controls button:active { transform: scale(.98); }
 
     /* Notice */
@@ -48,8 +55,6 @@
       font-size: 13px; line-height: 1.2; z-index: 20;
     }
     .hidden { display: none !important; }
-
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   </style>
 </head>
 <body>
@@ -58,7 +63,7 @@
 
     <model-viewer id="mv"
       src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
-      ios-src="https://github.com/zonbita/AR-JS/raw/main/module.usdz"
+      ios-src="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz"
       alt="Robot Expressive"
       ar
       ar-modes="webxr scene-viewer quick-look"
@@ -75,10 +80,12 @@
       <button slot="ar-button" id="arBtn">🚀 Xem trong AR</button>
     </model-viewer>
 
-  <a slot="ar" rel="ar" id="ApplePay" href="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz#applePayButtonType=check-out&checkoutTitle=Input%20Code&checkoutSubtitle=Website&price=0">
-    <img src="https://raw.githubusercontent.com/zonbita/AR-JS/button.png">
-  </a>
-  
+    <!-- Quick Look Call-to-Action (opens Kenh14.vn) -->
+    <a rel="ar" id="Kenh14Btn"
+       href="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz#callToAction=Visit%20Kenh14.vn&checkoutTitle=Kenh14.vn&checkoutSubtitle=Tap%20to%20open&callToActionURL=https://kenh14.vn">
+      <img src="https://raw.githubusercontent.com/zonbita/AR-JS/button.png" alt="Kenh14.vn">
+    </a>
+
     <!-- Audio controls -->
     <div class="audio-controls" id="audioControls">
       <button id="playBtn" type="button">▶️ Play nhạc</button>
@@ -87,8 +94,8 @@
     </div>
   </div>
 
-  <!-- Nhạc nền (online, thay URL khác nếu cần) -->
-   <audio id="bgm" src="music.mp3" preload="auto" loop></audio>
+  <!-- Nhạc nền -->
+  <audio id="bgm" src="music.mp3" preload="auto" loop></audio>
 
   <script>
     (function(){
@@ -110,14 +117,12 @@
         show._t = setTimeout(()=> notice.classList.add('hidden'), ms);
       }
 
-      // Kiểm tra môi trường
       if (!isSecure()) {
         show('⚠️ Hãy chạy trên HTTPS (hoặc localhost) để bật AR.');
       } else {
         show('✅ Thiết bị sẵn sàng. Nhấn “Xem trong AR” hoặc Play nhạc.', 2000);
       }
 
-      // Animation mặc định
       mv.addEventListener('load', () => {
         const anims = mv.availableAnimations || [];
         if (anims.length) {
@@ -129,25 +134,19 @@
         }
       });
 
-      // Hàm cập nhật trạng thái nhạc
-      function setAudioState(text){
-        audioState.textContent = text;
-      }
+      function setAudioState(text){ audioState.textContent = text; }
 
-      // Nút Play/Pause nhạc
       playBtn.addEventListener('click', async () => {
         try { await bgm.play(); setAudioState('Đang phát'); }
         catch { setAudioState('Bị chặn'); }
       });
       pauseBtn.addEventListener('click', () => { bgm.pause(); setAudioState('Tạm dừng'); });
 
-      // Khi bấm AR button
       arBtn.addEventListener('click', () => {
         bgm.play().then(()=> setAudioState('Đang phát')).catch(()=> setAudioState('Bị chặn'));
         if (isIOS()) show('📲 iOS Quick Look không cho nhạc web chạy trong AR.', 2500);
       });
 
-      // Khi AR bắt đầu (Android WebXR/Scene Viewer)
       mv.addEventListener("ar-status", e => {
         const s = e.detail.status;
         if (s === "session-started") {
@@ -159,12 +158,10 @@
         }
       });
 
-      // Dừng nhạc khi tab ẩn
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) { bgm.pause(); setAudioState('Tạm dừng'); }
       });
 
-      // Lỗi model-viewer
       mv.addEventListener('error', (e) => {
         console.warn('[model-viewer] error:', e?.detail || e);
         show('⚠️ Lỗi model-viewer. Xem console.', 3000);
@@ -175,7 +172,3 @@
   </script>
 </body>
 </html>
-
-
-
-
