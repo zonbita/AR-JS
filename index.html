@@ -62,8 +62,8 @@
     </model-viewer>
   </div>
 
-  <!-- Nhạc nền -->
-  <audio id="bgm" src="https://raw.githubusercontent.com/zonbita/AR-JS/main/lactroi.mp3" preload="auto" loop></audio>
+  <!-- Nhạc nền: để cùng thư mục với file .html -->
+  <audio id="bgm" src="music.mp3" preload="auto" loop></audio>
 
   <script>
     const mv = document.getElementById('mv');
@@ -101,7 +101,7 @@
       }
     });
 
-    // Sự kiện AR (chỉ WebXR trong trình duyệt)
+    // Sự kiện AR (WebXR trong trình duyệt)
     mv.addEventListener("ar-status", e => {
       const s = e.detail.status;
       if (s === "session-started") {
@@ -115,12 +115,11 @@
       }
     });
 
-    // Unlock audio trên iOS (Quick Look) hoặc khi bấm nút AR
+    // Unlock audio khi bấm nút AR (iOS Quick Look thì vẫn bị chặn nhạc)
     arBtn.addEventListener('click', () => {
-      // Unlock audio context
       bgm.play().then(()=>{ bgm.pause(); bgm.currentTime=0; }).catch(()=>{});
       if (isIOS()) {
-        show('📲 iOS sẽ mở Quick Look (nhạc web không phát trong AR).', 2500);
+        show('📲 iOS Quick Look không hỗ trợ nhạc web trong AR.', 2500);
       }
     });
 
@@ -132,5 +131,3 @@
   </script>
 </body>
 </html>
-
-
