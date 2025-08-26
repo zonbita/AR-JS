@@ -2,15 +2,12 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
-  <meta name="theme-color" content="#0b0c10" />
-  <title>Robot AR + WebXR (Stable)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0b0c10"/>
+  <title>Robot AR + Sound (Final)</title>
 
-  <!-- Favicon (fix 404) -->
-  <link rel="icon" type="image/png" href="https://modelviewer.dev/favicon.png" />
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://modelviewer.dev/favicon.png"/>
 
   <!-- model-viewer -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -20,18 +17,18 @@
     html, body { height: 100%; margin: 0; background: #0b0c10; color: #fff; font-family: system-ui, sans-serif; }
     .wrap { position: relative; height: 100vh; }
     model-viewer {
-      width: 100%; height: 100%; display: block; background: #0b0c10;
-      --poster-color: #0b0c10;
+      width: 100%; height: 100%; display: block;
+      background: #0b0c10; --poster-color: #0b0c10;
     }
-    /* Nút AR tùy biến */
+    /* Nút AR */
     button[slot="ar-button"]{
       position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
       padding: 12px 20px; font-size: 16px; font-weight: 600;
       border-radius: 12px; border: none; cursor: pointer;
-      background: #ffe66d; color: #1b1e23; box-shadow: 0 6px 20px rgba(255, 230, 109, .35);
+      background: #ffe66d; color: #1b1e23; box-shadow: 0 6px 20px rgba(255,230,109,.35);
     }
-    button[slot="ar-button"]:active { transform: translateX(-50%) scale(.98); }
-    /* Badge thông báo */
+    button[slot="ar-button"]:active { transform: translateX(-50%) scale(.97); }
+    /* Thông báo */
     .notice {
       position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
       background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
@@ -51,12 +48,11 @@
       alt="Robot Expressive"
       ar
       ar-modes="webxr scene-viewer quick-look"
-      ar-scale="fixed"              <!-- tránh scale bất ngờ khi vào AR -->
+      ar-scale="fixed"
       camera-controls
       exposure="1"
       shadow-intensity="1"
       shadow-softness="0.6"
-      poster="https://modelviewer.dev/assets/poster-droid.png"
       autoplay
       tone-mapping="aces"
       disable-zoom
@@ -66,15 +62,16 @@
     </model-viewer>
   </div>
 
-  <!-- Âm thanh cho WebXR (chỉ phát khi ở trong phiên WebXR) -->
+  <!-- Nhạc nền -->
   <audio id="bgm" src="https://raw.githubusercontent.com/zonbita/AR-JS/main/lactroi.mp3" preload="auto" loop></audio>
 
   <script>
     const mv = document.getElementById('mv');
     const bgm = document.getElementById('bgm');
     const notice = document.getElementById('notice');
+    const arBtn = document.getElementById('arBtn');
 
-    // --------- Helpers
+    // Helpers
     const isSecure = () => location.protocol === 'https:' || location.hostname === 'localhost';
     const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
@@ -85,63 +82,49 @@
       show._t = setTimeout(()=> notice.classList.add('hidden'), ms);
     }
 
-    // --------- Kiểm tra môi trường
+    // Kiểm tra môi trường
     if (!isSecure()) {
       show('⚠️ Hãy chạy trên HTTPS (hoặc localhost) để bật AR.');
     } else {
-      // Model-Viewer sẽ tự quyết AR mode dựa trên thiết bị
-      // Ta chỉ hiện một thông báo ngắn gọn cho UX
       show('✅ Thiết bị sẵn sàng. Nhấn “Xem trong AR”.', 1800);
     }
 
-    // --------- Điều khiển animation mặc định trong chế độ 3D
+    // Animation mặc định trong chế độ 3D
     mv.addEventListener('load', () => {
       const anims = mv.availableAnimations || [];
       if (anims.length) {
-        mv.animationName = anims.includes('Dance') ? 'Dance' : anims[0];
+        const chosen = anims.includes("Dance") ? "Dance" : anims[0];
+        mv.animationName = chosen;
         mv.loop = true;
         mv.timeScale = 1;
         if (mv.play) mv.play();
       }
     });
 
-    // --------- Sự kiện AR (WebXR trong trình duyệt)
-    // Lưu ý: Khi vào Scene Viewer (Android) hoặc Quick Look (iOS), trang bị tạm dừng => nhạc web không phát được.
-    mv.addEventListener('ar-status', (e) => {
+    // Sự kiện AR (chỉ WebXR trong trình duyệt)
+    mv.addEventListener("ar-status", e => {
       const s = e.detail.status;
-      if (s === 'session-started') {
-        // WebXR session trong trình duyệt
-        if (navigator.vibrate) navigator.vibrate(15);
-
-        // đảm bảo animation chạy
+      if (s === "session-started") {
+        if (navigator.vibrate) navigator.vibrate(20);
         try { if (mv.play) mv.play(); } catch {}
-
-        // Phát nhạc (user đã tương tác → không bị chặn)
         bgm.currentTime = 0;
-        bgm.volume = 1;
-        bgm.play().catch(()=> console.log('[WebXR] play() bị chặn.'));
-      }
-      if (s === 'not-presenting' || s === 'failed') {
-        // Thoát WebXR hoặc lỗi
-        try { bgm.pause(); bgm.currentTime = 0; } catch {}
+        bgm.play().catch(()=>console.log("[WebXR] Audio blocked"));
+      } else if (s==="not-presenting" || s==="failed") {
+        bgm.pause(); bgm.currentTime = 0;
+        try { mv.pause(); mv.currentTime = 0; } catch {}
       }
     });
 
-    // --------- Bắt sự kiện click nút AR để đảm bảo audio được "unlock" bởi user gesture
-    document.getElementById('arBtn').addEventListener('click', () => {
-      // Chỉ "nạp" audio; nếu sau đó vào Scene Viewer/Quick Look thì trang sẽ bị tạm dừng.
-      bgm.play().then(() => { bgm.pause(); bgm.currentTime = 0; }).catch(()=>{});
+    // Unlock audio trên iOS (Quick Look) hoặc khi bấm nút AR
+    arBtn.addEventListener('click', () => {
+      // Unlock audio context
+      bgm.play().then(()=>{ bgm.pause(); bgm.currentTime=0; }).catch(()=>{});
       if (isIOS()) {
-        show('📲 iOS sẽ mở Quick Look (audio web không phát trong AR).', 2500);
+        show('📲 iOS sẽ mở Quick Look (nhạc web không phát trong AR).', 2500);
       }
     });
 
-    // --------- Phòng khi nút AR bị ẩn vì device không hỗ trợ
-    mv.addEventListener('ar-button', (e) => {
-      // model-viewer 1.x phát sự kiện này khi render nút; không cần xử lý gì thêm
-    });
-
-    // --------- Optional: log chẩn đoán
+    // Log lỗi nếu có
     mv.addEventListener('error', (e) => {
       console.warn('[model-viewer] error:', e?.detail || e);
       show('⚠️ Có lỗi model-viewer. Kiểm tra console.', 3000);
