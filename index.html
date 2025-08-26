@@ -4,38 +4,52 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="theme-color" content="#0b0c10"/>
-  <title>Robot AR + Sound (Final)</title>
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="https://modelviewer.dev/favicon.png"/>
+  <title>Robot AR + Sound (Play Fixed)</title>
 
   <!-- model-viewer -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
   <style>
     :root { color-scheme: dark; }
-    html, body { height: 100%; margin: 0; background: #0b0c10; color: #fff; font-family: system-ui, sans-serif; }
-    .wrap { position: relative; height: 100vh; }
+    html, body { height: 100%; margin: 0; background: #0b0c10; color: #fff; font-family: system-ui, -apple-system, Roboto, 'Segoe UI', Arial; }
+    .wrap { position: relative; height: 100vh; overflow: hidden; }
+
     model-viewer {
       width: 100%; height: 100%; display: block;
       background: #0b0c10; --poster-color: #0b0c10;
     }
-    /* Nút AR */
+
+    /* AR button (slot="ar-button") */
     button[slot="ar-button"]{
       position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
       padding: 12px 100px; font-size: 16px; font-weight: 600;
       border-radius: 12px; border: none; cursor: pointer;
       background: #ffe66d; color: #1b1e23; box-shadow: 0 6px 20px rgba(255,230,109,.35);
+      z-index: 20;
     }
     button[slot="ar-button"]:active { transform: translateX(-50%) scale(.97); }
-    /* Thông báo */
+
+    /* Small control bar to explicitly Play/Pause music if autoplay blocked */
+    .audio-controls {
+      position: absolute; bottom: 92px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; align-items: center;
+      background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(6px);
+      z-index: 20;
+    }
+    .audio-controls button { background: transparent; border: 1px solid rgba(255,255,255,0.08); color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+    .audio-controls button:active { transform: scale(.98); }
+
+    /* Notice */
     .notice {
       position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
       background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
       padding: 8px 12px; border-radius: 10px; backdrop-filter: blur(8px);
-      font-size: 13px; line-height: 1.2;
+      font-size: 13px; line-height: 1.2; z-index: 20;
     }
     .hidden { display: none !important; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   </style>
 </head>
 <body>
@@ -56,78 +70,152 @@
       autoplay
       tone-mapping="aces"
       disable-zoom
+      reveal="interaction"
     >
-      <!-- Nút mở AR -->
-      <button slot="ar-button" id="arBtn">🚀 Xem trong AR</button>
+      <!-- Nút mở AR (khi click -> model-viewer xử lý mở AR) -->
+      <button slot="ar-button" id="arBtn" aria-label="Mở AR">🚀 Xem trong AR</button>
     </model-viewer>
+
+    <!-- Audio controls (nút play/pause rõ ràng cho người dùng) -->
+    <div class="audio-controls" id="audioControls" aria-hidden="true">
+      <button id="playBtn" type="button">▶️ Play nhạc</button>
+      <button id="pauseBtn" type="button">⏸️ Pause</button>
+      <span id="audioState" style="font-size:13px; opacity:.9;">Tắt</span>
+    </div>
   </div>
 
-  <!-- Nhạc nền: để cùng thư mục với file .html -->
+  <!-- NHẠC: Đặt music.mp3 cùng thư mục với file html, hoặc đổi src sang URL HTTPS -->
   <audio id="bgm" src="music.mp3" preload="auto" loop></audio>
 
   <script>
-    const mv = document.getElementById('mv');
-    const bgm = document.getElementById('bgm');
-    const notice = document.getElementById('notice');
-    const arBtn = document.getElementById('arBtn');
+    (function(){
+      const mv = document.getElementById('mv');
+      const bgm = document.getElementById('bgm');
+      const notice = document.getElementById('notice');
+      const arBtn = document.getElementById('arBtn');
+      const playBtn = document.getElementById('playBtn');
+      const pauseBtn = document.getElementById('pauseBtn');
+      const audioControls = document.getElementById('audioControls');
+      const audioState = document.getElementById('audioState');
 
-    // Helpers
-    const isSecure = () => location.protocol === 'https:' || location.hostname === 'localhost';
-    const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isSecure = () => location.protocol === 'https:' || location.hostname === 'localhost';
+      const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isAndroid = () => /Android/i.test(navigator.userAgent);
 
-    function show(msg, ms=2200){
-      notice.textContent = msg;
-      notice.classList.remove('hidden');
-      clearTimeout(show._t);
-      show._t = setTimeout(()=> notice.classList.add('hidden'), ms);
-    }
-
-    // Kiểm tra môi trường
-    if (!isSecure()) {
-      show('⚠️ Hãy chạy trên HTTPS (hoặc localhost) để bật AR.');
-    } else {
-      show('✅ Thiết bị sẵn sàng. Nhấn “Xem trong AR”.', 1800);
-    }
-
-    // Animation mặc định trong chế độ 3D
-    mv.addEventListener('load', () => {
-      const anims = mv.availableAnimations || [];
-      if (anims.length) {
-        const chosen = anims.includes("Dance") ? "Dance" : anims[0];
-        mv.animationName = chosen;
-        mv.loop = true;
-        mv.timeScale = 1;
-        if (mv.play) mv.play();
+      function show(msg, ms=2200){
+        notice.textContent = msg;
+        notice.classList.remove('hidden');
+        clearTimeout(show._t);
+        show._t = setTimeout(()=> notice.classList.add('hidden'), ms);
       }
-    });
 
-    // Sự kiện AR (WebXR trong trình duyệt)
-    mv.addEventListener("ar-status", e => {
-      const s = e.detail.status;
-      if (s === "session-started") {
-        if (navigator.vibrate) navigator.vibrate(20);
-        try { if (mv.play) mv.play(); } catch {}
-        bgm.currentTime = 0;
-        bgm.play().catch(()=>console.log("[WebXR] Audio blocked"));
-      } else if (s==="not-presenting" || s==="failed") {
-        bgm.pause(); bgm.currentTime = 0;
-        try { mv.pause(); mv.currentTime = 0; } catch {}
+      // Kiểm tra môi trường
+      if (!isSecure()) {
+        show('⚠️ Hãy chạy trên HTTPS (hoặc localhost) để bật AR.');
+      } else {
+        show('✅ Thiết bị sẵn sàng. Nhấn “Xem trong AR” hoặc Play nhạc.', 2200);
       }
-    });
 
-    // Unlock audio khi bấm nút AR (iOS Quick Look thì vẫn bị chặn nhạc)
-    arBtn.addEventListener('click', () => {
-      bgm.play().then(()=>{ bgm.pause(); bgm.currentTime=0; }).catch(()=>{});
-      if (isIOS()) {
-        show('📲 iOS Quick Look không hỗ trợ nhạc web trong AR.', 2500);
+      // Hiện controls để người dùng bấm Play/Pause nếu autoplay chặn
+      audioControls.setAttribute('aria-hidden', 'false');
+
+      // Hàm cập nhật trạng thái text
+      function setAudioState(text){
+        audioState.textContent = text;
       }
-    });
 
-    // Log lỗi nếu có
-    mv.addEventListener('error', (e) => {
-      console.warn('[model-viewer] error:', e?.detail || e);
-      show('⚠️ Có lỗi model-viewer. Kiểm tra console.', 3000);
-    });
+      // Thử unlock audio 1 lần bằng 1 cử chỉ: play rồi pause
+      function tryUnlockAudio(){
+        // Một click/tap của người dùng cho phép play theo chính sách trình duyệt
+        return bgm.play()
+          .then(()=> { bgm.pause(); bgm.currentTime = 0; setAudioState('Sẵn sàng'); return true; })
+          .catch(()=> { setAudioState('Bị chặn'); return false; });
+      }
+
+      // Nút Play thủ công (người dùng bấm => chắc chắn play)
+      playBtn.addEventListener('click', async () => {
+        try {
+          await bgm.play();
+          setAudioState('Đang phát');
+        } catch (err) {
+          console.warn('Play failed:', err);
+          // Nếu bị chặn, thử unlock bằng thao tác khác
+          const ok = await tryUnlockAudio();
+          if (ok) {
+            try { await bgm.play(); setAudioState('Đang phát'); } catch(e){ setAudioState('Bị chặn'); }
+          } else setAudioState('Bị chặn');
+        }
+      });
+
+      pauseBtn.addEventListener('click', () => {
+        try { bgm.pause(); setAudioState('Tạm dừng'); } catch(e){ console.warn(e); }
+      });
+
+      // Khi bấm nút AR (nút ở slot được model-viewer dùng để mở AR),
+      // ta cũng cố gắng play nhạc (nếu trình duyệt cho phép).
+      arBtn.addEventListener('click', async (ev) => {
+        // cố gắng phát nhạc ngay trên gesture này
+        try {
+          await bgm.play();
+          setAudioState('Đang phát');
+        } catch (err) {
+          // Nếu bị chặn, thử unlock (play->pause) rồi báo cho user
+          console.log('[AR] audio play blocked, attempting unlock');
+          await tryUnlockAudio();
+          show(isIOS() ? '📲 iOS Quick Look không cho nhạc web chạy trong AR.' : '🔊 Nếu nhạc không phát, nhấn nút Play.');
+        }
+
+        // Note: model-viewer sẽ xử lý mở AR (khi click nút trong slot).
+        // Không cần gọi API khác ở đây.
+      });
+
+      // Khi session AR bắt đầu (WebXR/Scene Viewer), đảm bảo nhạc phát
+      mv.addEventListener('ar-status', (e) => {
+        const s = e?.detail?.status;
+        if (s === 'session-started') {
+          // Rung nhẹ cho phản hồi
+          if (navigator.vibrate) navigator.vibrate(20);
+          // Nếu audio đã unlock, phát; nếu chưa, thử
+          bgm.currentTime = 0;
+          bgm.play().then(()=> setAudioState('Đang phát')).catch(()=> {
+            console.log('[ar-status] audio blocked');
+            setAudioState('Bị chặn');
+          });
+        } else if (s === 'not-presenting' || s === 'failed') {
+          try { bgm.pause(); bgm.currentTime = 0; setAudioState('Tắt'); } catch(_) {}
+        }
+      });
+
+      // Pause audio khi tab ẩn để tránh phát ngầm
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          try { bgm.pause(); setAudioState('Tạm dừng'); } catch(_) {}
+        }
+      });
+
+      // Xử lý lỗi model-viewer
+      mv.addEventListener('error', (e) => {
+        console.warn('[model-viewer] error:', e?.detail || e);
+        show('⚠️ Lỗi model-viewer. Mở DevTools để xem console.', 3000);
+      });
+
+      // Thử unlock audio khi người dùng có 1 lần tap bất kỳ (dùng as a fallback)
+      function oneTimeUnlockOnFirstTap() {
+        const handler = async () => {
+          await tryUnlockAudio();
+          window.removeEventListener('pointerdown', handler, {capture:true});
+        };
+        window.addEventListener('pointerdown', handler, {capture:true, once:true});
+      }
+      oneTimeUnlockOnFirstTap();
+
+      // Init label
+      setAudioState('Tắt');
+
+      // Accessibility: if user navigates by keyboard, focus on controls
+      playBtn.addEventListener('keyup', (ev) => { if (ev.key === 'Enter') playBtn.click(); });
+      pauseBtn.addEventListener('keyup', (ev) => { if (ev.key === 'Enter') pauseBtn.click(); });
+    })();
   </script>
 </body>
 </html>
