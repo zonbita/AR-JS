@@ -64,29 +64,18 @@
     <model-viewer id="mv"
       src="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
   ios-src="https://raw.githubusercontent.com/zonbita/AR-JS/main/dance.usdz#callToAction=Buy%20Now&checkoutTitle=Dance%20Model&checkoutSubtitle=$19.99&canonicalWebPageURL=https://raw.githubusercontent.com/zonbita/AR-JS/main/test.html"
-  ar-modes="webxr scene-viewer quick-look"
-  ar-scale="auto"
-  camera-controls
-  camera-orbit="0deg 75deg 1.5m"
-  field-of-view="30deg"
-  min-camera-orbit="auto auto 0.5m"
-  max-camera-orbit="auto auto 3m"
-  auto-rotate
-  auto-rotate-delay="3000"
-  interaction-prompt="auto"
+  alt="Robot Expressive"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      ar-scale="auto"
+      camera-controls
+      exposure="1"
+      shadow-intensity="1"
+      shadow-softness="0.6"
+      autoplay
+      tone-mapping="aces"
+        interaction-prompt="auto"
   interaction-prompt-threshold="3000"
-  animation-name="Animation1"
-  animation-crossfade-duration="300"
-  exposure="1"
-  shadow-intensity="1"
-  shadow-softness="0.6"
-  tone-mapping="aces"
-  environment-image="neutral"
-  poster="model-thumbnail.jpg"
-  loading="eager"
-  reveal="auto"
-  autoplay
-  preload
     >
       <!-- Nút mở AR -->
       <button slot="ar-button" id="arBtn">🚀 Xem trong AR</button>
@@ -96,11 +85,6 @@
     <!-- Quick Look Call-to-Action (opens Kenh14.vn) -->
 
     <!-- Audio controls -->
-    <div class="audio-controls" id="audioControls">
-      <button id="playBtn" type="button">▶️ Play nhạc</button>
-      <button id="pauseBtn" type="button">⏸️ Pause</button>
-      <span id="audioState" style="font-size:13px; opacity:.9;">Tắt</span>
-    </div>
   </div>
 
   <!-- Nhạc nền -->
@@ -181,6 +165,7 @@
   </script>
 </body>
 </html>
+
 
 
 
