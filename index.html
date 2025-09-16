@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
@@ -158,15 +157,15 @@
     </style>
   </head>
   <body>
-    <div class="ar-info" id="arInfo">
-      <strong>🎯 AR Mode Active!</strong><br>
-      Tap on the glowing hotspots around the model to interact with them.
-    </div>
+    <!-- Hidden iOS AR Quick Look link for native button support -->
+    <a id="ar-link" rel="ar" href="1M.usdz#applePayButtonType=plain&checkoutTitle=BABY1M%20AR%20Experience&checkoutSubtitle=Tap%20to%20unlock%20exclusive%20content" style="display: none;">
+      <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="AR Link">
+    </a>
 
     <model-viewer
       id="mv"
       src="1M.glb"
-      ios-src="1M.usdz"
+      ios-src="1M.usdz#applePayButtonType=plain&checkoutTitle=BABY1M%20Experience&checkoutSubtitle=Exclusive%20AR%20Content"
       ar
       ar-modes="webxr quick-look"
       ar-scale="auto"
@@ -199,21 +198,11 @@
       <button 
         class="hotspot" 
         slot="hotspot-3" 
-        data-position="0m 0.25m 0.15m" 
+        data-position="0m 0.2m 0m" 
         data-normal="0m 1m 0m"
         onclick="handleHotspotClick('share')"
       >
         📱 Share
-      </button>
-      
-      <button 
-        class="hotspot" 
-        slot="hotspot-4" 
-        data-position="0m 0.05m -0.2m" 
-        data-normal="0m 0m -1m"
-        onclick="handleHotspotClick('settings')"
-      >
-        ⚙️ Settings
       </button>
     </model-viewer>
 
@@ -237,40 +226,53 @@
       const bgm = document.getElementById("bgm");
       const btnGroup = document.getElementById("btnGroup");
       const arInfo = document.getElementById("arInfo");
+      const arInfoText = document.getElementById("arInfoText");
+      const arLink = document.getElementById("ar-link");
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-      // Handle hotspot clicks in AR
-      window.handleHotspotClick = function(action) {
-        console.log('Hotspot clicked:', action);
+      // iOS AR Quick Look button listener
+      if (isIOS && arLink) {
+        arLink.addEventListener("message", function(event) {
+          console.log("iOS AR Quick Look message:", event.data);
+          
+          if (event.data === "_apple_ar_quicklook_button_tapped") {
+            // Handle the native iOS AR button tap
+            handleIOSARButtonTap();
+          }
+        }, false);
+      }
+
+      // Handle iOS AR button tap
+      function handleIOSARButtonTap() {
+        console.log("iOS AR button tapped!");
         
-        switch(action) {
-          case 'action':
-            // Navigate to game or trigger action
-            window.open('https://store.epicgames.com/vi', '_blank');
-            break;
-          case 'info':
-            // Show info popup or navigate
-            alert('Model Information: This is a 3D model demonstration with AR capabilities.');
-            break;
-          case 'share':
-            // Share functionality
+        // Multiple action options for iOS AR button
+        const actions = [
+          { name: "🎮 Play Game", action: () => window.open('https://store.epicgames.com/vi', '_blank') },
+          { name: "📱 Share Experience", action: () => {
             if (navigator.share) {
               navigator.share({
-                title: 'Check out this AR experience!',
+                title: 'Amazing AR Experience!',
+                text: 'Check out this incredible AR model!',
                 url: window.location.href
               });
             } else {
-              // Fallback
               navigator.clipboard.writeText(window.location.href);
               alert('Link copied to clipboard!');
             }
-            break;
-          case 'settings':
-            // Settings or preferences
-            alert('Settings: Adjust AR experience preferences here.');
-            break;
+          }},
+          { name: "ℹ️ More Info", action: () => alert('BABY1M AR Experience - Premium 3D content with interactive features!') }
+        ];
+        
+        // Show action sheet (iOS style)
+        const actionText = actions.map((item, index) => `${index + 1}. ${item.name}`).join('\n');
+        const choice = prompt(`Choose an action:\n\n${actionText}\n\nEnter number (1-${actions.length}):`);
+        
+        const actionIndex = parseInt(choice) - 1;
+        if (actionIndex >= 0 && actionIndex < actions.length) {
+          actions[actionIndex].action();
         }
-      };
+      }
 
       // AR button click handler
       customAR.addEventListener("click", async (event) => {
@@ -298,6 +300,13 @@
           
           // Set AR status attribute to show hotspots
           mv.setAttribute('ar-status', 'session-started');
+          
+          // Update info text based on platform
+          if (isIOS) {
+            arInfoText.textContent = "Look for the banner button in AR Quick Look to interact!";
+          } else {
+            arInfoText.textContent = "Tap on the glowing hotspots around the model to interact with them.";
+          }
           
           // Hide info after 5 seconds
           setTimeout(() => {
