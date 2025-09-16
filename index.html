@@ -28,6 +28,51 @@
         --ar-button-display: none;
         background: #0b0c10;
       }
+      
+      /* Hotspot styling - these will appear in AR */
+      .hotspot {
+        background: linear-gradient(135deg, #ff3b3b, #d81b60);
+        border-radius: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 16px rgba(255, 59, 59, 0.4);
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        min-width: 120px;
+        text-align: center;
+      }
+      
+      .hotspot:hover {
+        background: linear-gradient(135deg, #ff5555, #e91e63);
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(255, 59, 59, 0.6);
+      }
+      
+      .action-hotspot {
+        background: linear-gradient(135deg, #ffd700, #ff8c00);
+        color: #1a1a1a;
+        animation: pulse 2s infinite;
+      }
+      
+      .action-hotspot:hover {
+        background: linear-gradient(135deg, #ffed4e, #ffa500);
+      }
+      
+      @keyframes pulse {
+        0%, 100% {
+          transform: scale(1);
+          box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+        }
+        50% {
+          transform: scale(1.05);
+          box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+        }
+      }
+      
       .button-group {
         position: absolute;
         bottom: 30px;
@@ -36,8 +81,6 @@
         display: flex;
         gap: 16px;
         z-index: 10;
-
-        /* Ban đầu ẩn */
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.8s ease, transform 0.8s ease;
@@ -62,7 +105,6 @@
         gap: 10px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
-        will-change: transform, filter, box-shadow;
         backdrop-filter: blur(12px);
       }
       .button-group button:hover {
@@ -85,9 +127,34 @@
         font-size: 20px;
         transform: translateY(1px);
       }
+      
+      /* AR Info overlay */
+      .ar-info {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px;
+        border-radius: 12px;
+        font-size: 14px;
+        backdrop-filter: blur(10px);
+        z-index: 100;
+        display: none;
+      }
+      
+      .ar-info.show {
+        display: block;
+      }
     </style>
   </head>
   <body>
+    <div class="ar-info" id="arInfo">
+      <strong>🎯 AR Mode Active!</strong><br>
+      Tap on the glowing hotspots around the model to interact with them.
+    </div>
+
     <model-viewer
       id="mv"
       src="1M.glb"
@@ -100,10 +167,46 @@
       scale="0.5 0.5 0.5"
       camera-controls
     >
-          <button class="view-button" slot="hotspot-1" data-position="-0.1997m 0.11766m 0.0056m" data-normal="-0.4421014m 0.04410423m 0.8958802m" data-orbit="3.711166deg 92.3035deg 0.04335197m" data-target="-0.1879433m 0.1157161m -0.01563221m">
-                    Hold Tight!
-                  </button>
+      <!-- Interactive hotspots that will appear in AR -->
+      <button 
+        class="hotspot action-hotspot" 
+        slot="hotspot-1" 
+        data-position="0.2m 0.15m 0m" 
+        data-normal="1m 0m 0m"
+        onclick="handleHotspotClick('action')"
+      >
+        🎮 Play Game
+      </button>
       
+      <button 
+        class="hotspot" 
+        slot="hotspot-2" 
+        data-position="-0.2m 0.15m 0m" 
+        data-normal="-1m 0m 0m"
+        onclick="handleHotspotClick('info')"
+      >
+        ℹ️ Info
+      </button>
+      
+      <button 
+        class="hotspot" 
+        slot="hotspot-3" 
+        data-position="0m 0.25m 0.15m" 
+        data-normal="0m 1m 0m"
+        onclick="handleHotspotClick('share')"
+      >
+        📱 Share
+      </button>
+      
+      <button 
+        class="hotspot" 
+        slot="hotspot-4" 
+        data-position="0m 0.05m -0.2m" 
+        data-normal="0m 0m -1m"
+        onclick="handleHotspotClick('settings')"
+      >
+        ⚙️ Settings
+      </button>
     </model-viewer>
 
     <div class="button-group" id="btnGroup">
@@ -125,9 +228,43 @@
       const customAR = document.getElementById("customAR");
       const bgm = document.getElementById("bgm");
       const btnGroup = document.getElementById("btnGroup");
+      const arInfo = document.getElementById("arInfo");
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-      // Nút kích hoạt AR
+      // Handle hotspot clicks in AR
+      window.handleHotspotClick = function(action) {
+        console.log('Hotspot clicked:', action);
+        
+        switch(action) {
+          case 'action':
+            // Navigate to game or trigger action
+            window.open('https://store.epicgames.com/vi', '_blank');
+            break;
+          case 'info':
+            // Show info popup or navigate
+            alert('Model Information: This is a 3D model demonstration with AR capabilities.');
+            break;
+          case 'share':
+            // Share functionality
+            if (navigator.share) {
+              navigator.share({
+                title: 'Check out this AR experience!',
+                url: window.location.href
+              });
+            } else {
+              // Fallback
+              navigator.clipboard.writeText(window.location.href);
+              alert('Link copied to clipboard!');
+            }
+            break;
+          case 'settings':
+            // Settings or preferences
+            alert('Settings: Adjust AR experience preferences here.');
+            break;
+        }
+      };
+
+      // AR button click handler
       customAR.addEventListener("click", async (event) => {
         event.preventDefault();
         try {
@@ -144,19 +281,28 @@
         }
       });
 
-      // Xử lý âm thanh khi thoát AR hoặc ẩn trang
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          bgm.pause();
-          bgm.currentTime = 0;
-        }
-      });
-
+      // Handle AR status changes
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
           bgm.currentTime = 0;
           bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
+          arInfo.classList.add('show');
+          
+          // Hide info after 5 seconds
+          setTimeout(() => {
+            arInfo.classList.remove('show');
+          }, 5000);
+          
         } else if (event.detail.status === "not-presenting") {
+          bgm.pause();
+          bgm.currentTime = 0;
+          arInfo.classList.remove('show');
+        }
+      });
+
+      // Handle page visibility
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
           bgm.pause();
           bgm.currentTime = 0;
         }
@@ -167,23 +313,21 @@
         bgm.currentTime = 0;
       });
 
-      // Animation load
+      // Animation and model loading
       mv.addEventListener("load", () => {
         const animations = mv.availableAnimations;
 
         if (animations && animations.length > 0) {
           mv.animationName = animations[0];
-          mv.animationLoop = false; // tắt loop
-          mv.play(); // bắt đầu animation
+          mv.animationLoop = false;
+          mv.play();
 
-          // Theo dõi thời gian và ép currentTime liên tục để khoá cuối
           const lockAtEnd = () => {
             const duration = mv.duration;
             const currentTime = mv.currentTime;
 
             if (duration && currentTime >= duration - 0.1) {
               mv.timeScale = 0.0;
-              // Hiện nút
               btnGroup.classList.add("show");
             } else {
               requestAnimationFrame(lockAtEnd);
@@ -199,9 +343,3 @@
     </script>
   </body>
 </html>
-
-
-
-
-
-
