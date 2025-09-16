@@ -29,7 +29,7 @@
         background: #0b0c10;
       }
       
-      /* Hotspot styling - these will appear in AR */
+      /* Hotspot styling - these will appear ONLY in AR */
       .hotspot {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
         border-radius: 20px;
@@ -44,6 +44,14 @@
         backdrop-filter: blur(10px);
         min-width: 120px;
         text-align: center;
+        
+        /* Hide in web view, only show in AR */
+        display: none !important;
+      }
+      
+      /* Show hotspots only when in AR mode */
+      model-viewer[ar-status="session-started"] .hotspot {
+        display: block !important;
       }
       
       .hotspot:hover {
@@ -288,6 +296,9 @@
           bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
           arInfo.classList.add('show');
           
+          // Set AR status attribute to show hotspots
+          mv.setAttribute('ar-status', 'session-started');
+          
           // Hide info after 5 seconds
           setTimeout(() => {
             arInfo.classList.remove('show');
@@ -297,6 +308,9 @@
           bgm.pause();
           bgm.currentTime = 0;
           arInfo.classList.remove('show');
+          
+          // Remove AR status attribute to hide hotspots
+          mv.removeAttribute('ar-status');
         }
       });
 
