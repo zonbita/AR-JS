@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
@@ -21,6 +22,7 @@
           sans-serif;
         overflow: hidden;
       }
+      
       model-viewer {
         width: 100%;
         height: 100%;
@@ -28,7 +30,7 @@
         background: #0b0c10;
       }
       
-      /* Hotspot styling - these will appear ONLY in AR */
+      /* Hotspot styling - these will appear ONLY in AR for Android */
       .hotspot {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
         border-radius: 20px;
@@ -92,11 +94,13 @@
         pointer-events: none;
         transition: opacity 0.8s ease, transform 0.8s ease;
       }
+      
       .button-group.show {
         opacity: 1;
         pointer-events: auto;
         transform: translateX(-50%) translateY(0);
       }
+      
       .button-group button {
         flex: 1;
         width: 160px;
@@ -112,24 +116,30 @@
         gap: 10px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
+        will-change: transform, filter, box-shadow;
         backdrop-filter: blur(12px);
       }
+      
       .button-group button:hover {
         transform: translateY(-2px);
         filter: brightness(1.1);
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
       }
+      
       .button-group button:active {
         transform: scale(0.95);
       }
+      
       .ar-btn {
         background: linear-gradient(135deg, #ffd700, #ff8c00);
         color: #1a1a1a;
       }
+      
       .link-btn {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
         color: #fff;
       }
+      
       .btn-icon {
         font-size: 20px;
         transform: translateY(1px);
@@ -158,14 +168,19 @@
   </head>
   <body>
     <!-- Hidden iOS AR Quick Look link for native button support -->
-    <a id="ar-link" rel="ar" href="1M.usdz#applePayButtonType=plain&checkoutTitle=BABY1M%20AR%20Experience&checkoutSubtitle=Tap%20to%20unlock%20exclusive%20content" style="display: none;">
+    <a id="ar-link" rel="ar" href="1M.usdz#callToAction=Unlock%20Content&checkoutTitle=BABY1M%20AR%20Experience&checkoutSubtitle=Exclusive%20Interactive%20Features&price=$0.00" style="display: none;">
       <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="AR Link">
     </a>
+
+    <div class="ar-info" id="arInfo">
+      <strong>🎯 AR Mode Active!</strong><br>
+      <span id="arInfoText">Tap on the glowing hotspots around the model to interact with them.</span>
+    </div>
 
     <model-viewer
       id="mv"
       src="1M.glb"
-      ios-src="1M.usdz#applePayButtonType=plain&checkoutTitle=BABY1M%20Experience&checkoutSubtitle=Exclusive%20AR%20Content"
+      ios-src="1M.usdz#callToAction=Unlock%20Content&checkoutTitle=BABY1M%20AR%20Experience&checkoutSubtitle=Exclusive%20Interactive%20Features&price=$0.00"
       ar
       ar-modes="webxr quick-look"
       ar-scale="auto"
@@ -174,7 +189,7 @@
       scale="0.5 0.5 0.5"
       camera-controls
     >
-      <!-- Interactive hotspots that will appear in AR -->
+      <!-- Interactive hotspots for Android WebXR - hidden in web view -->
       <button 
         class="hotspot action-hotspot" 
         slot="hotspot-1" 
@@ -248,20 +263,33 @@
         
         // Multiple action options for iOS AR button
         const actions = [
-          { name: "🎮 Play Game", action: () => window.open('https://store.epicgames.com/vi', '_blank') },
-          { name: "📱 Share Experience", action: () => {
-            if (navigator.share) {
-              navigator.share({
-                title: 'Amazing AR Experience!',
-                text: 'Check out this incredible AR model!',
-                url: window.location.href
-              });
-            } else {
-              navigator.clipboard.writeText(window.location.href);
-              alert('Link copied to clipboard!');
+          { 
+            name: "🎮 Play Game", 
+            action: () => {
+              window.open('https://store.epicgames.com/vi', '_blank');
             }
-          }},
-          { name: "ℹ️ More Info", action: () => alert('BABY1M AR Experience - Premium 3D content with interactive features!') }
+          },
+          { 
+            name: "📱 Share Experience", 
+            action: () => {
+              if (navigator.share) {
+                navigator.share({
+                  title: 'Amazing AR Experience!',
+                  text: 'Check out this incredible BABY1M AR model!',
+                  url: window.location.href
+                });
+              } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link copied to clipboard!');
+              }
+            }
+          },
+          { 
+            name: "ℹ️ More Info", 
+            action: () => {
+              alert('BABY1M AR Experience\n\nPremium 3D content with interactive features!\n\nExplore the model in AR and discover hidden details.');
+            }
+          }
         ];
         
         // Show action sheet (iOS style)
@@ -274,6 +302,36 @@
         }
       }
 
+      // Handle hotspot clicks in AR (for Android WebXR)
+      window.handleHotspotClick = function(action) {
+        console.log('Hotspot clicked:', action);
+        
+        switch(action) {
+          case 'action':
+            // Navigate to game or trigger action
+            window.open('https://store.epicgames.com/vi', '_blank');
+            break;
+          case 'info':
+            // Show info popup or navigate
+            alert('BABY1M Model Information\n\nThis is a premium 3D model demonstration with AR capabilities.\n\nFeatures:\n• Interactive AR experience\n• Cross-platform compatibility\n• High-quality 3D rendering');
+            break;
+          case 'share':
+            // Share functionality
+            if (navigator.share) {
+              navigator.share({
+                title: 'Check out this AR experience!',
+                text: 'Amazing BABY1M 3D model in AR!',
+                url: window.location.href
+              });
+            } else {
+              // Fallback
+              navigator.clipboard.writeText(window.location.href);
+              alert('Link copied to clipboard!');
+            }
+            break;
+        }
+      };
+
       // AR button click handler
       customAR.addEventListener("click", async (event) => {
         event.preventDefault();
@@ -281,8 +339,13 @@
           await mv.activateAR();
         } catch (err) {
           console.log("Kích hoạt AR thất bại:", err);
+          // Fallback for iOS - try to trigger Quick Look directly
+          if (isIOS && arLink) {
+            arLink.click();
+          }
         }
 
+        // Handle background music for iOS
         if (isIOS && bgm.paused) {
           bgm.currentTime = 0;
           bgm
@@ -323,7 +386,7 @@
         }
       });
 
-      // Handle page visibility
+      // Handle page visibility changes
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
           bgm.pause();
@@ -331,26 +394,29 @@
         }
       });
 
+      // Handle page hide events
       window.addEventListener("pagehide", () => {
         bgm.pause();
         bgm.currentTime = 0;
       });
 
-      // Animation and model loading
+      // Handle model loading and animations
       mv.addEventListener("load", () => {
         const animations = mv.availableAnimations;
 
         if (animations && animations.length > 0) {
           mv.animationName = animations[0];
-          mv.animationLoop = false;
-          mv.play();
+          mv.animationLoop = false; // Disable loop
+          mv.play(); // Start animation
 
+          // Monitor animation progress and lock at end
           const lockAtEnd = () => {
             const duration = mv.duration;
             const currentTime = mv.currentTime;
 
             if (duration && currentTime >= duration - 0.1) {
-              mv.timeScale = 0.0;
+              mv.timeScale = 0.0; // Stop animation
+              // Show buttons after animation completes
               btnGroup.classList.add("show");
             } else {
               requestAnimationFrame(lockAtEnd);
@@ -360,8 +426,37 @@
           requestAnimationFrame(lockAtEnd);
         } else {
           console.log("Không tìm thấy animation trong mô hình.");
+          // Show buttons after delay if no animation
           setTimeout(() => btnGroup.classList.add("show"), 1000);
         }
+      });
+
+      // Handle model errors
+      mv.addEventListener("error", (event) => {
+        console.error("Model loading error:", event);
+        // Show buttons even if model fails to load
+        setTimeout(() => btnGroup.classList.add("show"), 2000);
+      });
+
+      // Optional: Handle model loading progress
+      mv.addEventListener("progress", (event) => {
+        const progress = event.detail.totalProgress;
+        console.log(`Loading progress: ${Math.round(progress * 100)}%`);
+      });
+
+      // Debug: Log when model is ready
+      mv.addEventListener("model-visibility", (event) => {
+        console.log("Model visibility changed:", event.detail.visible);
+      });
+
+      // Handle orientation changes for better AR experience
+      window.addEventListener("orientationchange", () => {
+        setTimeout(() => {
+          // Refresh AR session if needed
+          if (mv.getAttribute('ar-status') === 'session-started') {
+            console.log("Orientation changed in AR mode");
+          }
+        }, 500);
       });
     </script>
   </body>
