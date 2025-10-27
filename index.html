@@ -369,7 +369,7 @@
           bgm.currentTime = 0;
           bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
           arInfo.classList.add('show');
-          followCamera();
+        
           
           // Set AR status attribute to show hotspots
           mv.setAttribute('ar-status', 'session-started');
@@ -379,6 +379,7 @@
             arInfoText.textContent = "Look for the banner button in AR Quick Look to interact!";
           } else {
             arInfoText.textContent = "Tap on the glowing hotspots around the model to interact with them.";
+              followCamera();
           }
           
           // Hide info after 5 seconds
@@ -484,6 +485,7 @@
     </script>
   </body>
 </html>
+
 
 
 
