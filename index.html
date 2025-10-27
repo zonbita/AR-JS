@@ -2,40 +2,33 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Follow Camera</title>
+    <title>AR Follow Camera Smooth</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
       html, body {
         margin: 0;
-        padding: 0;
-        background-color: #000;
         height: 100%;
+        background: #000;
         overflow: hidden;
       }
-
       model-viewer {
         width: 100%;
         height: 100%;
-        background-color: #000;
+        background: #000;
       }
-
       .ar-btn {
         position: absolute;
-        bottom: 20px;
+        bottom: 24px;
         left: 50%;
         transform: translateX(-50%);
-        padding: 12px 20px;
-        font-size: 16px;
-        border-radius: 12px;
+        padding: 14px 22px;
+        border-radius: 16px;
         border: none;
         background: linear-gradient(135deg, #ffd700, #ff8c00);
         color: #222;
-        cursor: pointer;
         font-weight: bold;
-      }
-
-      .ar-btn:hover {
-        filter: brightness(1.1);
+        font-size: 16px;
+        cursor: pointer;
       }
     </style>
   </head>
@@ -50,8 +43,8 @@
       camera-controls
       disable-pan
       alt="AR Model"
-      exposure="1"
       shadow-intensity="1"
+      exposure="1.1"
     ></model-viewer>
 
     <button id="startAR" class="ar-btn">🕶️ Xem AR</button>
@@ -64,16 +57,21 @@
 
       let follow = false;
       let frameHandle;
+      const distance = 1.0; // khoảng cách model trước camera (1m)
+      const smoothFactor = 0.2; // hệ số mượt (0.1–0.3 là hợp lý)
+
+      const tmpTargetPos = new THREE.Vector3();
+      const tmpOffset = new THREE.Vector3();
 
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
-          console.log("AR started");
           follow = true;
+          console.log("🚀 AR started — object will follow camera");
           followModelToCamera();
         } else if (event.detail.status === "not-presenting") {
-          console.log("AR ended");
           follow = false;
           cancelAnimationFrame(frameHandle);
+          console.log("🛑 AR ended");
         }
       });
 
@@ -87,18 +85,18 @@
           return;
         }
 
-        // Cập nhật vị trí model trước camera mỗi frame
-        const distance = 1.0; // khoảng cách 1 mét
-        const offset = new THREE.Vector3(0, 0, -distance);
-        offset.applyQuaternion(camera.quaternion); // hướng theo camera
+        // Tính vị trí target trước mặt camera
+        tmpOffset.set(0, 0, -distance);
+        tmpOffset.applyQuaternion(camera.quaternion);
+        tmpTargetPos.copy(camera.position).add(tmpOffset);
 
-        // Đặt vị trí model tại trước mặt camera
-        model.position.copy(camera.position).add(offset);
+        // LERP vị trí model → target (làm mượt)
+        model.position.lerp(tmpTargetPos, smoothFactor);
 
-        // Giữ hướng của model luôn đối diện camera
-        model.quaternion.copy(camera.quaternion);
+        // LERP hướng model → hướng camera
+        model.quaternion.slerp(camera.quaternion, smoothFactor);
 
-        if (follow) frameHandle = requestAnimationFrame(followModelToCamera);
+        frameHandle = requestAnimationFrame(followModelToCamera);
       }
     </script>
   </body>
