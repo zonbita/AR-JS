@@ -2,7 +2,7 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Model Viewer</title>
+    <title>AR Model Viewer - Follow Camera</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
       body {
@@ -26,12 +26,8 @@
         transform: translateX(-50%);
         display: flex;
         gap: 12px;
-        opacity: 0;
-        transition: opacity 0.4s ease;
-      }
-
-      .button-group.show {
         opacity: 1;
+        transition: opacity 0.4s ease;
       }
 
       .ar-btn,
@@ -73,10 +69,8 @@
       environment-image="neutral"
     ></model-viewer>
 
-    <div class="button-group show" id="btnGroup">
-      <button class="ar-btn" id="customAR">
-        🕶️ Xem AR
-      </button>
+    <div class="button-group" id="btnGroup">
+      <button class="ar-btn" id="customAR">🕶️ Xem AR</button>
       <button
         class="link-btn"
         onclick="window.open('https://store.epicgames.com/vi', '_blank')"
@@ -90,36 +84,35 @@
       const btnGroup = document.querySelector("#btnGroup");
       const arBtn = document.querySelector("#customAR");
 
-      // Khi bấm "Xem AR" → mở AR mode
+      // Nút "Xem AR"
       arBtn.addEventListener("click", () => {
         mv.activateAR();
       });
 
-      // Khi model đã tải xong → hiện nhóm nút (nếu chưa có class)
+      // Hiện nút sau khi model load (nếu cần)
       mv.addEventListener("load", () => {
         btnGroup.classList.add("show");
       });
 
-      // === Di chuyển model theo camera trong AR (Android WebXR) ===
+      // === Model luôn theo camera trong AR (WebXR - Android) ===
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
           const scene = mv.scene;
           const camera = scene.camera;
           const model = mv.model;
 
-          const update = () => {
-            if (mv.getAttribute("ar-status") !== "session-started") return;
+          // Đưa model thành con của camera
+          camera.add(model);
 
-            const forward = new THREE.Vector3(0, 0, -1);
-            forward.applyQuaternion(camera.quaternion);
-            forward.multiplyScalar(1.0); // khoảng cách 1m
+          // Đặt model ngay trước camera 1m
+          model.position.set(0, -0.2, -1); // hơi thấp một chút, trông tự nhiên hơn
+          model.quaternion.set(0, 0, 0, 1);
 
-            model.position.copy(camera.position).add(forward);
-            model.quaternion.copy(camera.quaternion); // hướng theo camera
-
-            requestAnimationFrame(update);
-          };
-          update();
+          console.log("📸 Model attached to camera (follow mode)");
+        } else if (event.detail.status === "not-presenting") {
+          // Khi thoát AR → trả model về lại scene
+          mv.scene.add(mv.model);
+          console.log("👋 Model detached from camera");
         }
       });
     </script>
