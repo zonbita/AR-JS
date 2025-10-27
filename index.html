@@ -2,132 +2,30 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>AR Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Object Lock Demo</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
       html, body {
         margin: 0;
         height: 100%;
-        background: #0b0c10;
-        color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: #000;
         overflow: hidden;
       }
       model-viewer {
         width: 100%;
         height: 100%;
-        --ar-button-display: none;
-        background: #0b0c10;
-      }
-      .hotspot {
-        background: linear-gradient(135deg, #ff3b3b, #d81b60);
-        border-radius: 20px;
-        border: 3px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 4px 16px rgba(255, 59, 59, 0.4);
-        color: white;
-        font-size: 14px;
-        font-weight: bold;
-        padding: 12px 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        min-width: 120px;
-        text-align: center;
-        display: none !important;
-      }
-      model-viewer[ar-status="session-started"] .hotspot {
-        display: block !important;
-      }
-      .hotspot:hover {
-        background: linear-gradient(135deg, #ff5555, #e91e63);
-        transform: scale(1.1);
-        box-shadow: 0 6px 20px rgba(255, 59, 59, 0.6);
-      }
-      .action-hotspot {
-        background: linear-gradient(135deg, #ffd700, #ff8c00);
-        color: #1a1a1a;
-        animation: pulse 2s infinite;
-      }
-      .action-hotspot:hover {
-        background: linear-gradient(135deg, #ffed4e, #ffa500);
-      }
-      @keyframes pulse {
-        0%, 100% {
-          transform: scale(1);
-          box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
-        }
-        50% {
-          transform: scale(1.05);
-          box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-        }
-      }
-      .button-group {
-        position: absolute;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%) translateY(30px);
-        display: flex;
-        gap: 16px;
-        z-index: 10;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.8s ease, transform 0.8s ease;
-      }
-      .button-group.show {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateX(-50%) translateY(0);
-      }
-      .button-group button {
-        flex: 1;
-        width: 160px;
-        padding: 14px 20px;
-        border: none;
-        border-radius: 16px;
-        font-weight: 600;
-        font-size: 15px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
-        backdrop-filter: blur(12px);
-      }
-      .button-group button:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.1);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
-      }
-      .button-group button:active {
-        transform: scale(0.95);
-      }
-      .ar-btn {
-        background: linear-gradient(135deg, #ffd700, #ff8c00);
-        color: #1a1a1a;
-      }
-      .link-btn {
-        background: linear-gradient(135deg, #ff3b3b, #d81b60);
-        color: #fff;
-      }
-      .btn-icon {
-        font-size: 20px;
-        transform: translateY(1px);
+        background-color: #000;
       }
       .ar-info {
         position: absolute;
-        top: 20px;
-        left: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.8);
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.6);
         color: white;
-        padding: 15px;
-        border-radius: 12px;
+        padding: 8px 14px;
+        border-radius: 8px;
         font-size: 14px;
-        backdrop-filter: blur(10px);
-        z-index: 100;
         display: none;
       }
       .ar-info.show {
@@ -136,10 +34,7 @@
     </style>
   </head>
   <body>
-    <div class="ar-info" id="arInfo">
-      <strong>🎯 AR Mode Active!</strong><br>
-      <span id="arInfoText">Tap on the glowing hotspots around the model to interact with them.</span>
-    </div>
+    <div id="arInfo" class="ar-info">🔒 Mô hình đang được khóa trước camera</div>
 
     <model-viewer
       id="mv"
@@ -147,128 +42,45 @@
       ios-src="1M.usdz"
       ar
       ar-modes="webxr quick-look"
-      ar-scale="auto"
-      ar-placement="floor"
-      alt="BABY1M"
-      scale="0.5 0.5 0.5"
       camera-controls
-      autoplay
-    >
-      <button class="hotspot action-hotspot" slot="hotspot-1" data-position="0.2m 0.15m 0m" data-normal="1m 0m 0m" onclick="handleHotspotClick('action')">🎮 Play Game</button>
-      <button class="hotspot" slot="hotspot-2" data-position="-0.2m 0.15m 0m" data-normal="-1m 0m 0m" onclick="handleHotspotClick('info')">ℹ️ Info</button>
-      <button class="hotspot" slot="hotspot-3" data-position="0m 0.2m 0m" data-normal="0m 1m 0m" onclick="handleHotspotClick('share')">📱 Share</button>
+      ar-scale="fixed"
+      ar-placement="floor"
+      alt="Model"
+      scale="0.5 0.5 0.5">
     </model-viewer>
 
-    <div class="button-group" id="btnGroup">
-      <button class="ar-btn" id="customAR"><span class="btn-icon">🕶️</span> Xem AR</button>
-      <button class="link-btn" onclick="window.open('https://store.epicgames.com/vi', '_blank')"><span class="btn-icon">▶️</span> Ghé Thăm</button>
-    </div>
-
-    <audio id="bgm" src="music/Sound-InPlace.MP3" preload="auto" loop></audio>
-
     <script>
-      const mv = document.getElementById("mv");
-      const customAR = document.getElementById("customAR");
-      const bgm = document.getElementById("bgm");
-      const btnGroup = document.getElementById("btnGroup");
-      const arInfo = document.getElementById("arInfo");
-      const arInfoText = document.getElementById("arInfoText");
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const mv = document.getElementById('mv');
+      const arInfo = document.getElementById('arInfo');
+      let lockModel = false;
 
-      // Handle AR button
-      customAR.addEventListener("click", async (event) => {
-        event.preventDefault();
-        try { await mv.activateAR(); }
-        catch (err) { console.log("Kích hoạt AR thất bại:", err); }
-      });
-
-      // ====== 🔹 Thêm tính năng giữ mô hình ngang tầm mắt ======
-      let cameraLockEnabled = false;
-      function followCamera(xrFrame) {
-        if (!cameraLockEnabled || !mv.xrSession) return;
-
-        const refSpace = mv.xrReferenceSpace;
-        const viewerPose = xrFrame.getViewerPose(refSpace);
-        if (!viewerPose) return;
-
-        const view = viewerPose.views[0];
-        const camTransform = view.transform;
-        const distance = 1.5; // cách trước camera
-        const q = camTransform.orientation;
-        const pos = camTransform.position;
-
-        const forward = {
-          x: -2 * (q.x * q.z + q.w * q.y),
-          y: -2 * (q.y * q.z - q.w * q.x),
-          z: -1 + 2 * (q.x * q.x + q.y * q.y)
-        };
-
-        const newPos = {
-          x: pos.x + forward.x * distance,
-          y: pos.y, // ngang tầm mắt
-          z: pos.z + forward.z * distance
-        };
-
-        const root = mv.model?.modelRoot;
-        if (root) {
-          root.position.set(newPos.x, newPos.y, newPos.z);
-          root.orientation.copy(camTransform.orientation);
-        }
-
-        mv.xrSession.requestAnimationFrame((t, f) => followCamera(f));
-      }
-      // ==========================================================
-
-      mv.addEventListener("ar-status", (event) => {
-        if (event.detail.status === "session-started") {
-          bgm.currentTime = 0;
-          bgm.play().catch(() => {});
+      mv.addEventListener('ar-status', (event) => {
+        if (event.detail.status === 'session-started') {
+          lockModel = true;
           arInfo.classList.add('show');
-          mv.setAttribute('ar-status', 'session-started');
-
-          cameraLockEnabled = true; // Bắt đầu theo camera
-          mv.xrSession.requestAnimationFrame((t, f) => followCamera(f));
-
-          setTimeout(() => arInfo.classList.remove('show'), 5000);
-        } 
-        else if (event.detail.status === "not-presenting") {
-          bgm.pause(); bgm.currentTime = 0;
+          keepModelInFront();
+        } else if (event.detail.status === 'not-presenting') {
+          lockModel = false;
           arInfo.classList.remove('show');
-          mv.removeAttribute('ar-status');
-          cameraLockEnabled = false; // Dừng theo camera
         }
       });
 
-      window.handleHotspotClick = function(action) {
-        switch(action) {
-          case 'action': window.open('https://store.epicgames.com/vi', '_blank'); break;
-          case 'info': alert('BABY1M AR Information\nPremium 3D model demo.'); break;
-          case 'share':
-            if (navigator.share) {
-              navigator.share({title:'Check out this AR!',url:window.location.href});
-            } else {
-              navigator.clipboard.writeText(window.location.href);
-              alert('Link copied!');
-            }
-            break;
+      async function keepModelInFront() {
+        // Duy trì mô hình trước camera 1m và ngang tầm mắt
+        const distance = 1.0; // mét
+        while (lockModel && mv.xrSession) {
+          const camera = mv.getCamera();
+          if (camera) {
+            // Lấy hướng nhìn (forward vector)
+            const forward = camera.getWorldDirection(new THREE.Vector3());
+            const position = camera.position.clone().add(forward.multiplyScalar(distance));
+            // Gán vị trí mới cho mô hình
+            mv.scene.model.position.set(position.x, position.y, position.z);
+            mv.scene.model.updateMatrixWorld(true);
+          }
+          await new Promise(r => requestAnimationFrame(r));
         }
-      };
-
-      mv.addEventListener("load", () => {
-        const animations = mv.availableAnimations;
-        if (animations && animations.length > 0) {
-          mv.animationName = animations[0];
-          mv.animationLoop = false;
-          mv.play();
-          const lockAtEnd = () => {
-            if (mv.duration && mv.currentTime >= mv.duration - 0.1) {
-              mv.timeScale = 0.0;
-              btnGroup.classList.add("show");
-            } else requestAnimationFrame(lockAtEnd);
-          };
-          requestAnimationFrame(lockAtEnd);
-        } else setTimeout(() => btnGroup.classList.add("show"), 1000);
-      });
+      }
     </script>
   </body>
 </html>
