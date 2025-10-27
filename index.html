@@ -2,7 +2,7 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Model Bám Camera</title>
+    <title>AR Teleport Object</title>
     <script
       type="module"
       src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"
@@ -21,7 +21,6 @@
   </head>
 
   <body>
-    <!-- 🧩 MODEL VIEWER -->
     <model-viewer
       id="mv"
       src="1M.glb"
@@ -35,24 +34,22 @@
       shadow-intensity="1"
       exposure="1"
       tone-mapping="neutral"
-      alt="Model"
-    >
-    </model-viewer>
+      alt="Teleport AR Model"
+    ></model-viewer>
 
     <script>
       const mv = document.getElementById("mv");
-
-      // === MODEL LUÔN BÁM CAMERA TRONG AR ===
       let followCamera = false;
       let frameHandle = null;
+      let lastCameraPos = null;
 
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
-          console.log("🔹 Bắt đầu chế độ AR - kích hoạt bám camera");
+          console.log("🔹 AR start - follow camera + teleport");
           followCamera = true;
           startFollowCamera();
         } else if (event.detail.status === "not-presenting") {
-          console.log("🔹 Thoát AR - dừng bám camera");
+          console.log("🔹 AR end");
           followCamera = false;
           cancelAnimationFrame(frameHandle);
         }
@@ -62,7 +59,7 @@
         const THREE = mv?.THREE || window.MVThree || self.MVThree;
 
         if (!THREE || !mv.scene || !mv.model) {
-          console.warn("Chưa sẵn sàng THREE hoặc model");
+          console.warn("⏳ Chưa sẵn sàng THREE hoặc model");
           frameHandle = requestAnimationFrame(startFollowCamera);
           return;
         }
@@ -70,21 +67,37 @@
         const scene = mv.scene;
         const model = mv.model;
         const camera = scene.camera;
-        const distance = 1.0; // khoảng cách 1m trước camera
+        const distance = 1.0; // khoảng cách model trước camera
+        const teleportThreshold = 0.5; // dịch chuyển nếu camera đi xa hơn 0.5m
 
         function update() {
           if (followCamera && camera && model) {
-            // Hướng trước của camera
-            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            const currentPos = camera.position.clone();
 
-            // Tính vị trí mới (1m trước camera)
-            const targetPos = new THREE.Vector3().copy(camera.position).add(forward.multiplyScalar(distance));
+            // Nếu chưa có vị trí trước đó -> đặt model ban đầu
+            if (!lastCameraPos) {
+              teleportModel();
+              lastCameraPos = currentPos.clone();
+            }
 
-            // Gán vị trí và hướng cho model
-            model.position.copy(targetPos);
-            model.quaternion.copy(camera.quaternion);
+            // Kiểm tra khoảng cách camera đã di chuyển bao xa
+            const moveDistance = currentPos.distanceTo(lastCameraPos);
+            if (moveDistance > teleportThreshold) {
+              console.log(`⚡ Teleport model (${moveDistance.toFixed(2)}m)`);
+              teleportModel();
+              lastCameraPos.copy(currentPos);
+            }
           }
           frameHandle = requestAnimationFrame(update);
+        }
+
+        // Hàm dịch chuyển model tới trước camera
+        function teleportModel() {
+          const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+          const targetPos = new THREE.Vector3().copy(camera.position).add(forward.multiplyScalar(distance));
+
+          model.position.copy(targetPos);
+          model.quaternion.copy(camera.quaternion);
         }
 
         update();
