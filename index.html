@@ -1,90 +1,108 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <title>AR Follow Camera (Locked)</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <style>
-      html, body {
-        margin: 0;
-        height: 100%;
-        background: #000;
-        overflow: hidden;
+<head>
+  <meta charset="UTF-8" />
+  <title>AR Follow Camera Hard Lock</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+    .ar-btn {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 22px;
+      border-radius: 16px;
+      border: none;
+      background: linear-gradient(135deg, #ffd700, #ff8c00);
+      color: #222;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <model-viewer
+    id="mv"
+    src="1M.glb"
+    ios-src="1M.usdz"
+    ar
+    ar-modes="webxr quick-look"
+    camera-controls
+    disable-pan
+    ar-scale="fixed"
+    alt="AR Model"
+    shadow-intensity="1"
+    exposure="1.1"
+  ></model-viewer>
+
+  <button id="startAR" class="ar-btn">🕶️ Xem AR</button>
+
+  <script type="module">
+    const mv = document.querySelector("#mv");
+    const startAR = document.querySelector("#startAR");
+    startAR.addEventListener("click", () => mv.activateAR());
+
+    let frameHandle;
+    const distance = 1.0; // cách camera 1m
+
+    mv.addEventListener("ar-status", (event) => {
+      if (event.detail.status === "session-started") {
+        console.log("🚀 AR started — model locked to camera");
+        followCameraHardLock();
+      } else if (event.detail.status === "not-presenting") {
+        cancelAnimationFrame(frameHandle);
       }
-      model-viewer {
-        width: 100%;
-        height: 100%;
-        background: #000;
-      }
-      .ar-btn {
-        position: absolute;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 14px 22px;
-        border-radius: 16px;
-        border: none;
-        background: linear-gradient(135deg, #ffd700, #ff8c00);
-        color: #222;
-        font-weight: bold;
-        font-size: 16px;
-        cursor: pointer;
-      }
-    </style>
-  </head>
-  <body>
-    <model-viewer
-      id="mv"
-      src="1M.glb"
-      ios-src="1M.usdz"
-      ar
-      ar-modes="webxr quick-look"
-      camera-controls
-      disable-pan
-      ar-scale="fixed"
-      alt="AR Model"
-      shadow-intensity="1"
-      exposure="1.1"
-    ></model-viewer>
+    });
 
-    <button id="startAR" class="ar-btn">🕶️ Xem AR</button>
-
-    <script type="module">
-      const mv = document.querySelector("#mv");
-      const startAR = document.querySelector("#startAR");
-
-      startAR.addEventListener("click", () => mv.activateAR());
-
-      let frameHandle;
-      const distance = 1.0; // cách camera 1m
-
-      mv.addEventListener("ar-status", (event) => {
-        if (event.detail.status === "session-started") {
-          console.log("🚀 AR started — model locked to camera");
-          followCameraLock();
-        } else if (event.detail.status === "not-presenting") {
-          cancelAnimationFrame(frameHandle);
-          console.log("🛑 AR ended");
-        }
-      });
-
-      function followCameraLock() {
-        const scene = mv.scene;
-        const camera = scene?.camera;
+    function followCameraHardLock() {
+      try {
+        const xrSession = mv.xrSession;
+        const refSpace = mv.xrReferenceSpace;
         const model = mv.model;
-
-        if (camera && model) {
-          // Nếu model chưa là con của camera -> gắn vào
-          if (model.parent !== camera) {
-            camera.add(model);
-            model.position.set(0, 0, -distance); // trước mặt 1m
-            model.quaternion.identity();          // reset xoay
-            console.log("📦 Model attached to camera");
-          }
+        if (!xrSession || !refSpace || !model) {
+          frameHandle = requestAnimationFrame(followCameraHardLock);
+          return;
         }
 
-        frameHandle = requestAnimationFrame(followCameraLock);
+        // Update vị trí mỗi frame
+        xrSession.requestAnimationFrame((time, frame) => {
+          const pose = frame.getViewerPose(refSpace);
+          if (pose) {
+            const { x, y, z } = pose.transform.position;
+            const orient = pose.transform.orientation;
+            const q = new THREE.Quaternion(orient.x, orient.y, orient.z, orient.w);
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
+
+            // Đặt model cách camera 1m phía trước
+            const newPos = new THREE.Vector3(
+              x + forward.x * distance,
+              y + forward.y * distance,
+              z + forward.z * distance
+            );
+
+            model.position.set(newPos.x, newPos.y, newPos.z);
+            model.quaternion.copy(q);
+          }
+
+          frameHandle = requestAnimationFrame(followCameraHardLock);
+        });
+      } catch (err) {
+        console.warn("Tracking error:", err);
+        frameHandle = requestAnimationFrame(followCameraHardLock);
       }
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>
