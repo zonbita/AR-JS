@@ -369,6 +369,7 @@
           bgm.currentTime = 0;
           bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
           arInfo.classList.add('show');
+          followCamera();
           
           // Set AR status attribute to show hotspots
           mv.setAttribute('ar-status', 'session-started');
@@ -458,19 +459,18 @@
         console.log("Model visibility changed:", event.detail.visible);
       });
 
-        mv.addEventListener('camera-change', () => {
-    // Lấy vị trí camera hiện tại (x, y, z)
-    const camPos = mv.getCameraOrbit();
 
-    // Dịch vật thể theo hướng camera
-    // Ví dụ: đặt model luôn ở trước camera 0.5 mét
-    const distance = 0.5;
-    const radians = camPos.theta * Math.PI / 180;
-    const x = Math.sin(radians) * distance;
-    const z = Math.cos(radians) * distance;
-
-    mv.setAttribute('camera-target', `${x} ${camPos.phi} ${z}`);
-  });
+        function followCamera() {
+    const move = () => {
+      try {
+        // Đặt model vào trước camera một chút (0.3m)
+        mv.setAttribute('scale', '0.5 0.5 0.5');
+        mv.setAttribute('camera-target', '0 0 -0.3');
+      } catch (e) {}
+      requestAnimationFrame(move);
+    };
+    requestAnimationFrame(move);
+          
 
       // Handle orientation changes for better AR experience
       window.addEventListener("orientationchange", () => {
@@ -484,6 +484,7 @@
     </script>
   </body>
 </html>
+
 
 
 
