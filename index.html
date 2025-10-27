@@ -1,196 +1,258 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>AR Follow Camera</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>AR: Model Follow Camera (model-viewer + Three.js)</title>
+
+  <!-- model-viewer -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
+  <!-- Three.js & GLTFLoader (for the real WebXR approach) -->
+  <script src="https://unpkg.com/three@0.159.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.159.0/examples/jsm/loaders/GLTFLoader.js"></script>
+  <script src="https://unpkg.com/three@0.159.0/examples/jsm/webxr/ARButton.js"></script>
+
   <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: #0b0c10;
-      overflow: hidden;
-      color: white;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    html,body{height:100%;margin:0;background:#0b0c10;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    /* full screen model-viewer background */
+    model-viewer { width:100%; height:100%; --ar-button-display: none; background:#0b0c10; display:block; }
+
+    /* Controls UI (top-left) */
+    .ui {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      z-index: 50;
+      display: flex;
+      gap: 8px;
+    }
+    .ui button {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+    }
+    .ui button:active { transform: scale(0.98); }
+
+    /* Fake overlay (visual attach) */
+    .overlay-model {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%,-50%);
+      width: 260px;
+      height: 260px;
+      pointer-events: auto;
+      z-index: 40;
+      display: none; /* shown when fake mode active */
+      touch-action: none;
     }
 
-    model-viewer {
-      width: 100%;
-      height: 100%;
-      --ar-button-display: none;
-      background: #0b0c10;
-    }
-
-    /* UI 3D (hotspot) dính theo camera */
-    .camera-ui {
-      background: rgba(255, 215, 0, 0.9);
-      border-radius: 12px;
-      padding: 10px 16px;
-      font-weight: bold;
-      font-size: 14px;
-      color: #111;
-      border: 2px solid #fff;
-      box-shadow: 0 0 10px rgba(255, 255, 0, 0.8);
-      display: none !important;
-      transform: translateZ(0);
-    }
-
-    model-viewer[ar-status="session-started"] .camera-ui {
-      display: block !important;
-    }
-
-    .camera-ui:hover {
-      background: rgba(255, 255, 120, 0.95);
-      transform: scale(1.05);
-    }
-
-    /* Thông báo nhỏ */
-    .ar-info {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
-      background: rgba(0, 0, 0, 0.8);
-      border-radius: 10px;
-      padding: 12px;
-      font-size: 14px;
-      display: none;
-      z-index: 100;
-    }
-
-    .ar-info.show {
-      display: block;
-    }
-
-    /* Nút xem AR */
-    .button-group {
-      position: absolute;
-      bottom: 24px;
+    .hint {
+      position: fixed;
+      bottom: 18px;
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
-      gap: 12px;
-      z-index: 20;
+      z-index: 60;
+      background: rgba(0,0,0,0.55);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #fff;
+      display:none;
     }
 
-    .button-group button {
-      background: linear-gradient(135deg, #ffd700, #ff8c00);
-      border: none;
-      border-radius: 12px;
-      padding: 12px 18px;
-      font-weight: 600;
-      font-size: 15px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    }
-
-    .button-group button:active {
-      transform: scale(0.95);
-    }
+    /* Canvas for Three.js AR renderer (will be appended dynamically) */
+    #threeContainer { position: absolute; inset:0; z-index: 5; display:none; }
   </style>
 </head>
 <body>
 
-  <div class="ar-info" id="arInfo">
-    <strong>🎯 AR Mode Active!</strong>  
-    <br/>Model và UI 3D sẽ luôn theo camera.
-  </div>
-
-  <model-viewer
-    id="mv"
+  <!-- model-viewer (dùng cho fake overlay + để người dùng vẫn có chế độ AR bình thường nếu muốn) -->
+  <model-viewer id="mvBase"
     src="1M.glb"
     ios-src="1M.usdz"
+    alt="Model"
     ar
     ar-modes="webxr quick-look"
-    ar-scale="auto"
-    ar-placement="floor"
-    alt="BABY1M"
     camera-controls
-    disable-zoom
-    shadow-intensity="1"
-  >
-
-    <!-- UI dính theo camera -->
-    <div class="camera-ui" slot="hotspot-camera" 
-      data-position="0m 0m -0.3m" 
-      data-normal="0m 0m 1m"
-      onclick="alert('Bạn vừa nhấn vào UI 3D dính camera!')">
-      🎮 Bắt đầu chơi
-    </div>
+    style="display:block; width:100%; height:100%;">
   </model-viewer>
 
-  <div class="button-group">
-    <button id="btnAR">🕶️ Bật AR</button>
+  <!-- Overlay model: fake "dính camera" bằng model-viewer (không phải AR world-anchored) -->
+  <div class="overlay-model" id="overlayWrap">
+    <model-viewer id="overlayModel"
+      src="1M.glb"
+      alt="OverlayModel"
+      camera-controls
+      exposure="1"
+      shadow-intensity="1"
+      style="width:100%; height:100%; background:transparent;">
+      <!-- thêm nút 3D nếu muốn -->
+    </model-viewer>
   </div>
 
+  <!-- Three.js canvas container (real AR) -->
+  <div id="threeContainer"></div>
+
+  <div class="ui">
+    <button id="btnFake">Fake: Show model dính camera</button>
+    <button id="btnHideFake">Ẩn Fake</button>
+    <button id="btnThree">Real: Three.js AR (attach to camera)</button>
+  </div>
+
+  <div class="hint" id="hint">Nếu trình duyệt hỗ trợ WebXR + ARCore, bạn sẽ được yêu cầu cho phép AR.</div>
+
   <script>
-    const mv = document.getElementById('mv');
-    const btnAR = document.getElementById('btnAR');
-    const arInfo = document.getElementById('arInfo');
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // ---------- Helpers & elements ----------
+  const overlayWrap = document.getElementById('overlayWrap');
+  const overlayModel = document.getElementById('overlayModel');
+  const btnFake = document.getElementById('btnFake');
+  const btnHideFake = document.getElementById('btnHideFake');
+  const btnThree = document.getElementById('btnThree');
+  const threeContainer = document.getElementById('threeContainer');
+  const hint = document.getElementById('hint');
 
-    btnAR.addEventListener('click', async () => {
+  // ---------- Fake overlay approach (quick hack) ----------
+  // Hiển thị một <model-viewer> nhỏ đặt fixed ở giữa màn hình, trông như "dính camera".
+  btnFake.addEventListener('click', () => {
+    overlayWrap.style.display = 'block';
+    hint.style.display = 'block';
+    setTimeout(()=> hint.style.display='none', 3500);
+
+    // Tùy chỉnh vị trí/kích thước nếu muốn
+    overlayWrap.style.width = '220px';
+    overlayWrap.style.height = '220px';
+    // Optionally autoplay animation inside overlay model
+    try {
+      overlayModel.play?.();
+    } catch(e){}
+  });
+
+  btnHideFake.addEventListener('click', () => {
+    overlayWrap.style.display = 'none';
+  });
+
+  // ---------- Real attach: Three.js + WebXR ----------
+  // Mục tiêu: tạo WebXR AR session, load GLB, sau đó add(object) vào camera để object dính theo camera.
+  btnThree.addEventListener('click', async () => {
+    // Kiểm tra WebXR support
+    if (navigator.xr === undefined) {
+      alert('Trình duyệt không hỗ trợ WebXR. Dùng Chrome trên Android (ARCore) để thử thực tế.');
+      return;
+    }
+
+    // Khởi tạo Three.js renderer, scene, camera
+    threeContainer.style.display = 'block';
+
+    // create renderer
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    // append canvas
+    threeContainer.innerHTML = '';
+    threeContainer.appendChild(renderer.domElement);
+
+    // scene & camera
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
+
+    // lighting
+    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    scene.add(light);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    dir.position.set(0.5, 1, 0.5);
+    scene.add(dir);
+
+    // load GLB
+    const loader = new THREE.GLTFLoader();
+    let gltfObject = null;
+    try {
+      // Replace '1M.glb' with absolute path or URL if needed
+      await new Promise((resolve, reject) => {
+        loader.load('1M.glb', (g) => { gltfObject = g.scene; resolve(); }, undefined, reject);
+      });
+    } catch (err) {
+      console.error('Lỗi load GLB:', err);
+      alert('Không thể load GLB. Kiểm tra đường dẫn 1M.glb');
+      return;
+    }
+
+    // Tweak scale & orientation nếu cần
+    gltfObject.scale.setScalar(0.4);
+    gltfObject.position.set(0, 0, -0.3); // ban đầu ở trước camera 0.3m
+
+    // CÁCH CHÍNH: add object làm con của camera -> object sẽ dính camera
+    // Lưu ý: camera thuộc renderer.xr, nên chúng ta dùng camera của scene khi session active
+    camera.add(gltfObject);
+    scene.add(camera); // ensure camera in scene graph
+
+    // Add a reticle or ground if needed (omitted here)
+
+    // Request immersive-ar session
+    let session;
+    try {
+      session = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['local-floor'],
+        optionalFeatures: ['dom-overlay'],
+        domOverlay: { root: document.body }
+      });
+    } catch (err) {
+      console.error('Không thể tạo XR session:', err);
+      alert('Không thể khởi tạo AR session. Kiểm tra thiết bị/trình duyệt/permissions.');
+      return;
+    }
+
+    // Set session to renderer
+    renderer.xr.setSession(session);
+    // set reference space type optional
+    // session.requestReferenceSpace('local-floor') handled by renderer XR
+
+    // On session start, attach an XR-aware camera
+    // We will use renderer.setAnimationLoop for frame updates
+    renderer.setAnimationLoop((time, frame) => {
+      // object is child of camera, nên nó luôn dính theo camera transform
+      // nếu muốn offset động: gltfObject.position.set(0, -0.05, -0.45) etc
+      renderer.render(scene, camera);
+    });
+
+    // show hint
+    hint.style.display = 'block';
+    setTimeout(()=> hint.style.display='none', 3500);
+
+    // Resize handling
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+
+    // Optional: button to end session
+    const endBtn = document.createElement('button');
+    endBtn.textContent = 'Thoát AR';
+    Object.assign(endBtn.style, { position:'fixed', right:'12px', top:'12px', zIndex:99, padding:'8px 10px', borderRadius:'8px' });
+    document.body.appendChild(endBtn);
+    endBtn.addEventListener('click', async () => {
       try {
-        await mv.activateAR();
-      } catch (e) {
-        console.warn("Không thể bật AR:", e);
-      }
+        await session.end();
+      } catch(e){}
+      renderer.setAnimationLoop(null);
+      threeContainer.style.display = 'none';
+      endBtn.remove();
     });
 
-    // Khi bắt đầu AR
-    mv.addEventListener('ar-status', (event) => {
-      const status = event.detail.status;
-      if (status === 'session-started') {
-        mv.setAttribute('ar-status', 'session-started');
-        arInfo.classList.add('show');
-        setTimeout(() => arInfo.classList.remove('show'), 4000);
-        startFollowCamera();
-      } else if (status === 'not-presenting') {
-        mv.removeAttribute('ar-status');
-      }
+    // When session ends, cleanup canvas automatically
+    session.addEventListener('end', () => {
+      renderer.setAnimationLoop(null);
+      threeContainer.style.display = 'none';
     });
+  });
 
-    /**
-     * Model dính theo camera:
-     * Cập nhật vị trí liên tục dựa theo pose camera trong ARSession.
-     */
-    function startFollowCamera() {
-      const xrSession = mv.xrSession;
-      if (!xrSession) return;
-
-      const refSpace = mv.xrReferenceSpace;
-      const renderLoop = (time, frame) => {
-        const pose = frame.getViewerPose(refSpace);
-        if (pose) {
-          const pos = pose.transform.position;
-          const orient = pose.transform.orientation;
-
-          // Giữ model cách camera ~0.5m về phía trước
-          const distance = 0.5;
-          const dir = getForwardVector(orient);
-          const targetX = pos.x + dir.x * distance;
-          const targetY = pos.y + dir.y * distance;
-          const targetZ = pos.z + dir.z * distance;
-
-          mv.setAttribute('ar-placement', 'floor');
-          mv.setAttribute('position', `${targetX} ${targetY} ${targetZ}`);
-        }
-        xrSession.requestAnimationFrame(renderLoop);
-      };
-      xrSession.requestAnimationFrame(renderLoop);
-    }
-
-    /** Tính vector hướng camera đang nhìn tới */
-    function getForwardVector(quat) {
-      const [x, y, z, w] = [quat.x, quat.y, quat.z, quat.w];
-      return {
-        x: 2 * (x * z + w * y),
-        y: 2 * (y * z - w * x),
-        z: 1 - 2 * (x * x + y * y)
-      };
-    }
   </script>
 </body>
 </html>
