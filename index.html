@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>AR Demo</title>
+    <title>AR Camera Lock Demo</title>
     <script
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
@@ -30,7 +30,6 @@
         background: #0b0c10;
       }
       
-      /* Hotspot styling - these will appear ONLY in AR for Android */
       .hotspot {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
         border-radius: 20px;
@@ -45,12 +44,9 @@
         backdrop-filter: blur(10px);
         min-width: 120px;
         text-align: center;
-        
-        /* Hide in web view, only show in AR */
         display: none !important;
       }
       
-      /* Show hotspots only when in AR mode */
       model-viewer[ar-status="session-started"] .hotspot {
         display: block !important;
       }
@@ -116,7 +112,6 @@
         gap: 10px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
-        will-change: transform, filter, box-shadow;
         backdrop-filter: blur(12px);
       }
       
@@ -145,7 +140,6 @@
         transform: translateY(1px);
       }
       
-      /* AR Info overlay */
       .ar-info {
         position: absolute;
         top: 20px;
@@ -167,11 +161,9 @@
     </style>
   </head>
   <body>
-    <!-- Hidden iOS AR Quick Look link for native button support -->
-
     <div class="ar-info" id="arInfo">
-      <strong>🎯 AR Mode Active!</strong><br>
-      <span id="arInfoText">Tap on the glowing hotspots around the model to interact with them.</span>
+      <strong>🎯 AR Mode Active - Camera Lock!</strong><br>
+      <span id="arInfoText">Object sẽ luôn theo camera của bạn.</span>
     </div>
 
     <model-viewer
@@ -180,24 +172,14 @@
       ios-src="1M.usdz"
       ar
       ar-modes="webxr quick-look"
-      ar-scale="auto"
+      ar-scale="fixed"
       ar-placement="floor"
       alt="BABY1M"
       scale="0.5 0.5 0.5"
       camera-controls
-      quickLook: {
-        title: "CUSTOM TITLE",
-        allowsContentScaling: false,
-        canonicalWebPageURL: "https://github.com/naver/egjs-view3d",
-        applePayButtonType: "subscribe",
-        callToAction: "CUSTOM BUTTON TEXT",
-        checkoutTitle: "CUSTOM TITLE TEXT",
-        checkoutSubtitle: "CUSTOM SUBTITLE TEXT",
-        price: "100$",
-        customHeight: "large"
-      },
+      camera-orbit="0deg 75deg 1.5m"
+      field-of-view="45deg"
     >
-      <!-- Interactive hotspots for Android WebXR - hidden in web view -->
       <button 
         class="hotspot action-hotspot" 
         slot="hotspot-1" 
@@ -250,151 +232,125 @@
       const btnGroup = document.getElementById("btnGroup");
       const arInfo = document.getElementById("arInfo");
       const arInfoText = document.getElementById("arInfoText");
-      const arLink = document.getElementById("ar-link");
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      
+      let arSession = null;
+      let cameraLockEnabled = false;
 
-      // iOS AR Quick Look button listener
-      if (isIOS && arLink) {
-        arLink.addEventListener("message", function(event) {
-          console.log("iOS AR Quick Look message:", event.data);
-          
-          if (event.data === "_apple_ar_quicklook_button_tapped") {
-            // Handle the native iOS AR button tap
-            handleIOSARButtonTap();
-          }
-        }, false);
-      }
-
-      // Handle iOS AR button tap
-      function handleIOSARButtonTap() {
-        console.log("iOS AR button tapped!");
-        
-        // Multiple action options for iOS AR button
-        const actions = [
-          { 
-            name: "🎮 Play Game", 
-            action: () => {
-              window.open('https://store.epicgames.com/vi', '_blank');
-            }
-          },
-          { 
-            name: "📱 Share Experience", 
-            action: () => {
-              if (navigator.share) {
-                navigator.share({
-                  title: 'Amazing AR Experience!',
-                  text: 'Check out this incredible BABY1M AR model!',
-                  url: window.location.href
-                });
-              } else {
-                navigator.clipboard.writeText(window.location.href);
-                alert('Link copied to clipboard!');
-              }
-            }
-          },
-          { 
-            name: "ℹ️ More Info", 
-            action: () => {
-              alert('BABY1M AR Experience\n\nPremium 3D content with interactive features!\n\nExplore the model in AR and discover hidden details.');
-            }
-          }
-        ];
-        
-        // Show action sheet (iOS style)
-        const actionText = actions.map((item, index) => `${index + 1}. ${item.name}`).join('\n');
-        const choice = prompt(`Choose an action:\n\n${actionText}\n\nEnter number (1-${actions.length}):`);
-        
-        const actionIndex = parseInt(choice) - 1;
-        if (actionIndex >= 0 && actionIndex < actions.length) {
-          actions[actionIndex].action();
-        }
-      }
-
-      // Handle hotspot clicks in AR (for Android WebXR)
       window.handleHotspotClick = function(action) {
         console.log('Hotspot clicked:', action);
         
         switch(action) {
           case 'action':
-            // Navigate to game or trigger action
             window.open('https://store.epicgames.com/vi', '_blank');
             break;
           case 'info':
-            // Show info popup or navigate
-            alert('BABY1M Model Information\n\nThis is a premium 3D model demonstration with AR capabilities.\n\nFeatures:\n• Interactive AR experience\n• Cross-platform compatibility\n• High-quality 3D rendering');
+            alert('BABY1M Model - Camera Locked\n\nObject luôn theo camera!\n\nDi chuyển camera đi đâu, object sẽ theo đó.');
             break;
           case 'share':
-            // Share functionality
             if (navigator.share) {
               navigator.share({
-                title: 'Check out this AR experience!',
-                text: 'Amazing BABY1M 3D model in AR!',
+                title: 'AR Camera Lock Experience!',
+                text: 'Check out this camera-locked AR model!',
                 url: window.location.href
               });
             } else {
-              // Fallback
               navigator.clipboard.writeText(window.location.href);
-              alert('Link copied to clipboard!');
+              alert('Link copied!');
             }
             break;
         }
       };
 
-      // AR button click handler
+      // Hàm lock object vào camera
+      function lockObjectToCamera() {
+        if (!mv || !cameraLockEnabled) return;
+        
+        try {
+          // Lấy camera position và orientation
+          const camera = mv.getCameraOrbit();
+          const target = mv.getCameraTarget();
+          
+          // Tính toán vị trí mới dựa trên camera
+          // Object sẽ luôn ở phía trước camera với khoảng cách cố định
+          const distance = 1.5; // Khoảng cách từ camera (meters)
+          const heightOffset = -0.3; // Độ cao so với tầm nhìn
+          
+          // Cập nhật vị trí model để theo camera
+          const theta = camera.theta;
+          const phi = camera.phi;
+          
+          // Chuyển đổi từ spherical sang cartesian coordinates
+          const x = distance * Math.sin(phi) * Math.cos(theta);
+          const y = distance * Math.cos(phi) + heightOffset;
+          const z = distance * Math.sin(phi) * Math.sin(theta);
+          
+          // Set camera target để object luôn ở trung tâm
+          mv.cameraTarget = `${x}m ${y}m ${z}m`;
+          
+        } catch (err) {
+          console.log("Camera lock error:", err);
+        }
+        
+        // Tiếp tục update mỗi frame
+        if (cameraLockEnabled) {
+          requestAnimationFrame(lockObjectToCamera);
+        }
+      }
+
       customAR.addEventListener("click", async (event) => {
         event.preventDefault();
         try {
           await mv.activateAR();
         } catch (err) {
           console.log("Kích hoạt AR thất bại:", err);
-          // Fallback for iOS - try to trigger Quick Look directly
-          if (isIOS && arLink) {
-            arLink.click();
-          }
         }
 
-        // Handle background music for iOS
         if (isIOS && bgm.paused) {
           bgm.currentTime = 0;
-          bgm
-            .play()
-            .catch((err) => console.log("Không phát được nhạc trên iOS:", err));
+          bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
         }
       });
 
-      // Handle AR status changes
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
+          console.log("AR Session started - Enabling camera lock");
+          cameraLockEnabled = true;
+          
           bgm.currentTime = 0;
           bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
           arInfo.classList.add('show');
           
-          // Set AR status attribute to show hotspots
           mv.setAttribute('ar-status', 'session-started');
           
-          // Update info text based on platform
-          if (isIOS) {
-            arInfoText.textContent = "Look for the banner button in AR Quick Look to interact!";
-          } else {
-            arInfoText.textContent = "Tap on the glowing hotspots around the model to interact with them.";
-          }
+          arInfoText.textContent = "Object đang được lock vào camera! Di chuyển xung quanh để thấy hiệu ứng.";
           
-          // Hide info after 5 seconds
           setTimeout(() => {
             arInfo.classList.remove('show');
           }, 5000);
           
+          // Bắt đầu camera lock loop
+          lockObjectToCamera();
+          
         } else if (event.detail.status === "not-presenting") {
+          console.log("AR Session ended");
+          cameraLockEnabled = false;
+          
           bgm.pause();
           bgm.currentTime = 0;
           arInfo.classList.remove('show');
-          
-          // Remove AR status attribute to hide hotspots
           mv.removeAttribute('ar-status');
         }
       });
 
-      // Handle page visibility changes
+      // Handle camera changes in AR
+      mv.addEventListener("camera-change", () => {
+        if (cameraLockEnabled) {
+          // Camera đang thay đổi, update object position
+          lockObjectToCamera();
+        }
+      });
+
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
           bgm.pause();
@@ -402,29 +358,25 @@
         }
       });
 
-      // Handle page hide events
       window.addEventListener("pagehide", () => {
         bgm.pause();
         bgm.currentTime = 0;
       });
 
-      // Handle model loading and animations
       mv.addEventListener("load", () => {
         const animations = mv.availableAnimations;
 
         if (animations && animations.length > 0) {
           mv.animationName = animations[0];
-          mv.animationLoop = false; // Disable loop
-          mv.play(); // Start animation
+          mv.animationLoop = false;
+          mv.play();
 
-          // Monitor animation progress and lock at end
           const lockAtEnd = () => {
             const duration = mv.duration;
             const currentTime = mv.currentTime;
 
             if (duration && currentTime >= duration - 0.1) {
-              mv.timeScale = 0.0; // Stop animation
-              // Show buttons after animation completes
+              mv.timeScale = 0.0;
               btnGroup.classList.add("show");
             } else {
               requestAnimationFrame(lockAtEnd);
@@ -433,155 +385,29 @@
 
           requestAnimationFrame(lockAtEnd);
         } else {
-          console.log("Không tìm thấy animation trong mô hình.");
-          // Show buttons after delay if no animation
+          console.log("Không tìm thấy animation.");
           setTimeout(() => btnGroup.classList.add("show"), 1000);
         }
       });
 
-      // Handle model errors
       mv.addEventListener("error", (event) => {
         console.error("Model loading error:", event);
-        // Show buttons even if model fails to load
         setTimeout(() => btnGroup.classList.add("show"), 2000);
       });
 
-      // Optional: Handle model loading progress
       mv.addEventListener("progress", (event) => {
         const progress = event.detail.totalProgress;
-        console.log(`Loading progress: ${Math.round(progress * 100)}%`);
+        console.log(`Loading: ${Math.round(progress * 100)}%`);
       });
 
-      // Debug: Log when model is ready
-      mv.addEventListener("model-visibility", (event) => {
-        console.log("Model visibility changed:", event.detail.visible);
-      });
-
-      // Handle orientation changes for better AR experience
       window.addEventListener("orientationchange", () => {
         setTimeout(() => {
-          // Refresh AR session if needed
           if (mv.getAttribute('ar-status') === 'session-started') {
-            console.log("Orientation changed in AR mode");
+            console.log("Orientation changed - recalculating lock");
+            lockObjectToCamera();
           }
         }, 500);
       });
-
-      // === TELEPORT OBJECT FOLLOW CAMERA IN AR MODE ===
-      // Giữ nguyên code gốc, chỉ thêm phần này để model luôn đứng trước camera khi đang AR.
-      let teleportEnabled = true; // bật/tắt theo dõi
-      let lastXrRequestId = null;
-      let xrLoopRunning = false;
-
-      // Rotate a vector (vx,vy,vz) by a quaternion q = {x,y,z,w}
-      function rotateVectorByQuat(v, q) {
-        // Quaternion-vector multiplication: q * v * q_conjugate
-        const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
-        // v as quaternion
-        const vx = v.x, vy = v.y, vz = v.z;
-        // t = 2 * cross(q.xyz, v)
-        const tx = 2 * (qy * vz - qz * vy);
-        const ty = 2 * (qz * vx - qx * vz);
-        const tz = 2 * (qx * vy - qy * vx);
-        // v' = v + qw * t + cross(q.xyz, t)
-        const vpx = vx + qw * tx + (qy * tz - qz * ty);
-        const vpy = vy + qw * ty + (qz * tx - qx * tz);
-        const vpz = vz + qw * tz + (qx * ty - qy * tx);
-        return { x: vpx, y: vpy, z: vpz };
-      }
-
-      // Cập nhật vị trí model dựa trên frame XR
-      function onXrFrame(time, frame) {
-        // Lưu id callback để có thể cancel nếu cần
-        // (note: when using session.requestAnimationFrame, return value is integer id)
-        // Trong model-viewer, chúng ta dùng mv.xrSession.requestAnimationFrame
-        try {
-          if (!teleportEnabled || mv.getAttribute("ar-status") !== "session-started") {
-            xrLoopRunning = false;
-            return;
-          }
-
-          const refSpace = mv.xrReferenceSpace;
-          if (!frame || !refSpace) {
-            // tiếp tục vòng lặp nếu reference không sẵn sàng
-            if (mv.xrSession) {
-              lastXrRequestId = mv.xrSession.requestAnimationFrame(onXrFrame);
-            }
-            return;
-          }
-
-          const pose = frame.getViewerPose(refSpace);
-          if (pose && pose.views && pose.views.length > 0) {
-            const view = pose.views[0];
-            const pos = view.transform.position;
-            const orient = view.transform.orientation; // quaternion {x,y,z,w}
-
-            // forward vector in view-space is (0,0,-1)
-            const forward = rotateVectorByQuat({ x: 0, y: 0, z: -1 }, orient);
-
-            // khoảng cách muốn đặt model trước camera (mét)
-            const distance = 0.5;
-
-            const target = {
-              x: pos.x + forward.x * distance,
-              y: pos.y + forward.y * distance,
-              z: pos.z + forward.z * distance,
-            };
-
-            // Đặt position cho model-viewer (chuỗi: "x y z")
-            mv.setAttribute("position", `${target.x} ${target.y} ${target.z}`);
-            // (tùy model-viewer / GLTF: model có thể cần scale/rotation phù hợp)
-            // nếu bạn muốn nâng model cao hơn so với camera, tăng target.y thêm +0.1...
-          }
-
-          // tiếp tục vòng lặp
-          if (mv.xrSession) {
-            lastXrRequestId = mv.xrSession.requestAnimationFrame(onXrFrame);
-          } else {
-            xrLoopRunning = false;
-          }
-        } catch (e) {
-          console.warn("Teleport XR frame error:", e);
-          xrLoopRunning = false;
-        }
-      }
-
-      // Khi AR bắt đầu, khởi động loop XR
-      mv.addEventListener("ar-status", (event) => {
-        if (event.detail.status === "session-started") {
-          if (mv.xrSession && !xrLoopRunning) {
-            xrLoopRunning = true;
-            try {
-              lastXrRequestId = mv.xrSession.requestAnimationFrame(onXrFrame);
-              console.log("🔄 Teleport follow-camera started");
-            } catch (e) {
-              console.warn("Không thể bắt đầu XR loop:", e);
-              xrLoopRunning = false;
-            }
-          }
-        } else if (event.detail.status === "not-presenting") {
-          // Hủy callback nếu có
-          if (mv.xrSession && lastXrRequestId != null) {
-            try {
-              mv.xrSession.cancelAnimationFrame(lastXrRequestId);
-            } catch (e) {
-              // ignore
-            }
-            lastXrRequestId = null;
-          }
-          xrLoopRunning = false;
-          console.log("⛔ Teleport follow-camera stopped");
-        }
-      });
-
-      // Optional: expose a small toggle for debugging in console
-      window.__teleportToggle = function(enabled) {
-        teleportEnabled = !!enabled;
-        console.log("teleportEnabled =", teleportEnabled);
-      };
-      // Usage: trong console gõ __teleportToggle(false) để tắt theo dõi, __teleportToggle(true) để bật lại.
-
-      // === END TELEPORT SECTION ===
     </script>
   </body>
 </html>
