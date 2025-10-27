@@ -2,11 +2,14 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Teleport Object</title>
+    <title>AR Teleport Object Follow Camera</title>
+
+    <!-- Model Viewer -->
     <script
       type="module"
       src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"
     ></script>
+
     <style>
       body {
         margin: 0;
@@ -17,6 +20,23 @@
         width: 100vw;
         height: 100vh;
       }
+      .ar-button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 14px 22px;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: bold;
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 10;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      }
+      .ar-button:active {
+        background: #0056cc;
+      }
     </style>
   </head>
 
@@ -26,16 +46,19 @@
       src="1M.glb"
       ios-src="1M.usdz"
       ar
-      ar-modes="webxr quick-look"
+      ar-modes="webxr scene-viewer quick-look"
       ar-scale="fixed"
       ar-placement="floor"
       camera-controls
-      autoplay
       shadow-intensity="1"
-      exposure="1"
+      autoplay
+      alt="Teleport Model"
       tone-mapping="neutral"
-      alt="Teleport AR Model"
-    ></model-viewer>
+      exposure="1"
+      xr-environment
+    >
+      <button slot="ar-button" class="ar-button">Xem AR</button>
+    </model-viewer>
 
     <script>
       const mv = document.getElementById("mv");
@@ -68,19 +91,17 @@
         const model = mv.model;
         const camera = scene.camera;
         const distance = 1.0; // khoảng cách model trước camera
-        const teleportThreshold = 0.5; // dịch chuyển nếu camera đi xa hơn 0.5m
+        const teleportThreshold = 0.4; // teleport nếu camera di chuyển >0.4m
 
         function update() {
           if (followCamera && camera && model) {
             const currentPos = camera.position.clone();
 
-            // Nếu chưa có vị trí trước đó -> đặt model ban đầu
             if (!lastCameraPos) {
               teleportModel();
               lastCameraPos = currentPos.clone();
             }
 
-            // Kiểm tra khoảng cách camera đã di chuyển bao xa
             const moveDistance = currentPos.distanceTo(lastCameraPos);
             if (moveDistance > teleportThreshold) {
               console.log(`⚡ Teleport model (${moveDistance.toFixed(2)}m)`);
@@ -91,10 +112,12 @@
           frameHandle = requestAnimationFrame(update);
         }
 
-        // Hàm dịch chuyển model tới trước camera
+        // Teleport model đến trước camera
         function teleportModel() {
           const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-          const targetPos = new THREE.Vector3().copy(camera.position).add(forward.multiplyScalar(distance));
+          const targetPos = new THREE.Vector3()
+            .copy(camera.position)
+            .add(forward.multiplyScalar(distance));
 
           model.position.copy(targetPos);
           model.quaternion.copy(camera.quaternion);
