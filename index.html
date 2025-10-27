@@ -2,51 +2,40 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Always Front</title>
+    <title>AR Follow Camera</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
-      body {
+      html, body {
         margin: 0;
+        padding: 0;
         background-color: #000;
+        height: 100%;
         overflow: hidden;
-        font-family: sans-serif;
-        color: white;
       }
 
       model-viewer {
-        width: 100vw;
-        height: 100vh;
-        --poster-color: transparent;
+        width: 100%;
+        height: 100%;
+        background-color: #000;
       }
 
-      .button-group {
+      .ar-btn {
         position: absolute;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        display: flex;
-        gap: 12px;
-      }
-
-      .ar-btn,
-      .link-btn {
-        padding: 10px 16px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 12px 20px;
         font-size: 16px;
+        border-radius: 12px;
+        border: none;
+        background: linear-gradient(135deg, #ffd700, #ff8c00);
+        color: #222;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        backdrop-filter: blur(8px);
-        transition: background 0.3s;
+        font-weight: bold;
       }
 
-      .ar-btn:hover,
-      .link-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
+      .ar-btn:hover {
+        filter: brightness(1.1);
       }
     </style>
   </head>
@@ -57,48 +46,60 @@
       ios-src="1M.usdz"
       ar
       ar-modes="webxr quick-look"
-      ar-scale="auto"
+      ar-placement="floor"
       camera-controls
       disable-pan
-      alt="Model"
+      alt="AR Model"
+      exposure="1"
       shadow-intensity="1"
-      exposure="1.1"
     ></model-viewer>
 
-    <div class="button-group">
-      <button class="ar-btn" id="customAR">🕶️ Xem AR</button>
-      <button class="link-btn" onclick="window.open('https://store.epicgames.com/vi', '_blank')">
-        ▶️ Ghé Thăm
-      </button>
-    </div>
+    <button id="startAR" class="ar-btn">🕶️ Xem AR</button>
 
     <script type="module">
       const mv = document.querySelector("#mv");
-      const arBtn = document.querySelector("#customAR");
+      const startAR = document.querySelector("#startAR");
 
-      // Nút "Xem AR"
-      arBtn.addEventListener("click", () => mv.activateAR());
+      startAR.addEventListener("click", () => mv.activateAR());
 
-      // Khi vào AR, gắn object vào camera
+      let follow = false;
+      let frameHandle;
+
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
-          const camera = mv.scene.camera;
-          const model = mv.model;
-
-          // Gắn model vào camera
-          camera.add(model);
-
-          // Luôn đặt model trước camera 1m
-          model.position.set(0, 0, -1);
-          model.quaternion.set(0, 0, 0, 1);
-
-          console.log("✅ Model locked in front of camera");
+          console.log("AR started");
+          follow = true;
+          followModelToCamera();
         } else if (event.detail.status === "not-presenting") {
-          // Thoát AR → trả model về scene
-          mv.scene.add(mv.model);
-          console.log("🔄 Model detached from camera");
+          console.log("AR ended");
+          follow = false;
+          cancelAnimationFrame(frameHandle);
         }
       });
+
+      function followModelToCamera() {
+        const scene = mv.scene;
+        const camera = scene?.camera;
+        const model = mv.model;
+
+        if (!camera || !model) {
+          frameHandle = requestAnimationFrame(followModelToCamera);
+          return;
+        }
+
+        // Cập nhật vị trí model trước camera mỗi frame
+        const distance = 1.0; // khoảng cách 1 mét
+        const offset = new THREE.Vector3(0, 0, -distance);
+        offset.applyQuaternion(camera.quaternion); // hướng theo camera
+
+        // Đặt vị trí model tại trước mặt camera
+        model.position.copy(camera.position).add(offset);
+
+        // Giữ hướng của model luôn đối diện camera
+        model.quaternion.copy(camera.quaternion);
+
+        if (follow) frameHandle = requestAnimationFrame(followModelToCamera);
+      }
     </script>
   </body>
 </html>
