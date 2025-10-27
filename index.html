@@ -2,11 +2,20 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Follow Camera Hard</title>
+    <title>AR Follow Camera (Locked)</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
-      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-      model-viewer { width: 100%; height: 100%; background: #000; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      model-viewer {
+        width: 100%;
+        height: 100%;
+        background: #000;
+      }
       .ar-btn {
         position: absolute;
         bottom: 24px;
@@ -30,9 +39,9 @@
       ios-src="1M.usdz"
       ar
       ar-modes="webxr quick-look"
-      ar-placement="floor"
       camera-controls
       disable-pan
+      ar-scale="fixed"
       alt="AR Model"
       shadow-intensity="1"
       exposure="1.1"
@@ -46,44 +55,35 @@
 
       startAR.addEventListener("click", () => mv.activateAR());
 
-      let follow = false;
       let frameHandle;
-      const distance = 1.0; // 1 mét trước mặt
-
-      const tmpOffset = new THREE.Vector3();
-      const tmpTarget = new THREE.Vector3();
+      const distance = 1.0; // cách camera 1m
 
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
-          follow = true;
-          console.log("🚀 AR started — object locked to camera");
-          updateFollow();
+          console.log("🚀 AR started — model locked to camera");
+          followCameraLock();
         } else if (event.detail.status === "not-presenting") {
-          follow = false;
           cancelAnimationFrame(frameHandle);
           console.log("🛑 AR ended");
         }
       });
 
-      function updateFollow() {
-        if (!follow) return;
-
+      function followCameraLock() {
         const scene = mv.scene;
         const camera = scene?.camera;
         const model = mv.model;
 
         if (camera && model) {
-          // offset cố định 1m trước mặt camera
-          tmpOffset.set(0, 0, -distance);
-          tmpOffset.applyQuaternion(camera.quaternion);
-          tmpTarget.copy(camera.position).add(tmpOffset);
-
-          // đặt trực tiếp — không smooth
-          model.position.copy(tmpTarget);
-          model.quaternion.copy(camera.quaternion);
+          // Nếu model chưa là con của camera -> gắn vào
+          if (model.parent !== camera) {
+            camera.add(model);
+            model.position.set(0, 0, -distance); // trước mặt 1m
+            model.quaternion.identity();          // reset xoay
+            console.log("📦 Model attached to camera");
+          }
         }
 
-        frameHandle = requestAnimationFrame(updateFollow);
+        frameHandle = requestAnimationFrame(followCameraLock);
       }
     </script>
   </body>
