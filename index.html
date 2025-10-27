@@ -2,15 +2,15 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Model Viewer - Follow Camera</title>
+    <title>AR Always Front</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
       body {
         margin: 0;
         background-color: #000;
-        color: white;
-        font-family: sans-serif;
         overflow: hidden;
+        font-family: sans-serif;
+        color: white;
       }
 
       model-viewer {
@@ -26,8 +26,6 @@
         transform: translateX(-50%);
         display: flex;
         gap: 12px;
-        opacity: 1;
-        transition: opacity 0.4s ease;
       }
 
       .ar-btn,
@@ -60,59 +58,45 @@
       ar
       ar-modes="webxr quick-look"
       ar-scale="auto"
-      ar-placement="floor"
       camera-controls
       disable-pan
-      alt="BABY1M"
-      exposure="1.1"
+      alt="Model"
       shadow-intensity="1"
-      environment-image="neutral"
+      exposure="1.1"
     ></model-viewer>
 
-    <div class="button-group" id="btnGroup">
+    <div class="button-group">
       <button class="ar-btn" id="customAR">🕶️ Xem AR</button>
-      <button
-        class="link-btn"
-        onclick="window.open('https://store.epicgames.com/vi', '_blank')"
-      >
+      <button class="link-btn" onclick="window.open('https://store.epicgames.com/vi', '_blank')">
         ▶️ Ghé Thăm
       </button>
     </div>
 
     <script type="module">
       const mv = document.querySelector("#mv");
-      const btnGroup = document.querySelector("#btnGroup");
       const arBtn = document.querySelector("#customAR");
 
       // Nút "Xem AR"
-      arBtn.addEventListener("click", () => {
-        mv.activateAR();
-      });
+      arBtn.addEventListener("click", () => mv.activateAR());
 
-      // Hiện nút sau khi model load (nếu cần)
-      mv.addEventListener("load", () => {
-        btnGroup.classList.add("show");
-      });
-
-      // === Model luôn theo camera trong AR (WebXR - Android) ===
+      // Khi vào AR, gắn object vào camera
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
-          const scene = mv.scene;
-          const camera = scene.camera;
+          const camera = mv.scene.camera;
           const model = mv.model;
 
-          // Đưa model thành con của camera
+          // Gắn model vào camera
           camera.add(model);
 
-          // Đặt model ngay trước camera 1m
-          model.position.set(0, -0.2, -1); // hơi thấp một chút, trông tự nhiên hơn
+          // Luôn đặt model trước camera 1m
+          model.position.set(0, 0, -1);
           model.quaternion.set(0, 0, 0, 1);
 
-          console.log("📸 Model attached to camera (follow mode)");
+          console.log("✅ Model locked in front of camera");
         } else if (event.detail.status === "not-presenting") {
-          // Khi thoát AR → trả model về lại scene
+          // Thoát AR → trả model về scene
           mv.scene.add(mv.model);
-          console.log("👋 Model detached from camera");
+          console.log("🔄 Model detached from camera");
         }
       });
     </script>
