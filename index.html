@@ -175,6 +175,7 @@
     </div>
 
     <model-viewer
+      
       id="mv"
       src="1M.glb"
       ios-src="1M.usdz"
@@ -457,6 +458,20 @@
         console.log("Model visibility changed:", event.detail.visible);
       });
 
+        mv.addEventListener('camera-change', () => {
+    // Lấy vị trí camera hiện tại (x, y, z)
+    const camPos = mv.getCameraOrbit();
+
+    // Dịch vật thể theo hướng camera
+    // Ví dụ: đặt model luôn ở trước camera 0.5 mét
+    const distance = 0.5;
+    const radians = camPos.theta * Math.PI / 180;
+    const x = Math.sin(radians) * distance;
+    const z = Math.cos(radians) * distance;
+
+    mv.setAttribute('camera-target', `${x} ${camPos.phi} ${z}`);
+  });
+
       // Handle orientation changes for better AR experience
       window.addEventListener("orientationchange", () => {
         setTimeout(() => {
@@ -469,6 +484,7 @@
     </script>
   </body>
 </html>
+
 
 
 
