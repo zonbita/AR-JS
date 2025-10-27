@@ -22,14 +22,14 @@
           sans-serif;
         overflow: hidden;
       }
-
+      
       model-viewer {
         width: 100%;
         height: 100%;
         --ar-button-display: none;
         background: #0b0c10;
       }
-
+      
       /* Hotspot styling - these will appear ONLY in AR for Android */
       .hotspot {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
@@ -45,35 +45,34 @@
         backdrop-filter: blur(10px);
         min-width: 120px;
         text-align: center;
-
+        
         /* Hide in web view, only show in AR */
         display: none !important;
       }
-
+      
       /* Show hotspots only when in AR mode */
       model-viewer[ar-status="session-started"] .hotspot {
         display: block !important;
       }
-
+      
       .hotspot:hover {
         background: linear-gradient(135deg, #ff5555, #e91e63);
         transform: scale(1.1);
         box-shadow: 0 6px 20px rgba(255, 59, 59, 0.6);
       }
-
+      
       .action-hotspot {
         background: linear-gradient(135deg, #ffd700, #ff8c00);
         color: #1a1a1a;
         animation: pulse 2s infinite;
       }
-
+      
       .action-hotspot:hover {
         background: linear-gradient(135deg, #ffed4e, #ffa500);
       }
-
+      
       @keyframes pulse {
-        0%,
-        100% {
+        0%, 100% {
           transform: scale(1);
           box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
         }
@@ -82,7 +81,7 @@
           box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
         }
       }
-
+      
       .button-group {
         position: absolute;
         bottom: 30px;
@@ -95,13 +94,13 @@
         pointer-events: none;
         transition: opacity 0.8s ease, transform 0.8s ease;
       }
-
+      
       .button-group.show {
         opacity: 1;
         pointer-events: auto;
         transform: translateX(-50%) translateY(0);
       }
-
+      
       .button-group button {
         flex: 1;
         width: 160px;
@@ -120,32 +119,32 @@
         will-change: transform, filter, box-shadow;
         backdrop-filter: blur(12px);
       }
-
+      
       .button-group button:hover {
         transform: translateY(-2px);
         filter: brightness(1.1);
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
       }
-
+      
       .button-group button:active {
         transform: scale(0.95);
       }
-
+      
       .ar-btn {
         background: linear-gradient(135deg, #ffd700, #ff8c00);
         color: #1a1a1a;
       }
-
+      
       .link-btn {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
         color: #fff;
       }
-
+      
       .btn-icon {
         font-size: 20px;
         transform: translateY(1px);
       }
-
+      
       /* AR Info overlay */
       .ar-info {
         position: absolute;
@@ -161,7 +160,7 @@
         z-index: 100;
         display: none;
       }
-
+      
       .ar-info.show {
         display: block;
       }
@@ -171,7 +170,7 @@
     <!-- Hidden iOS AR Quick Look link for native button support -->
 
     <div class="ar-info" id="arInfo">
-      <strong>🎯 AR Mode Active!</strong><br />
+      <strong>🎯 AR Mode Active!</strong><br>
       <span id="arInfoText">Tap on the glowing hotspots around the model to interact with them.</span>
     </div>
 
@@ -196,33 +195,33 @@
         checkoutSubtitle: "CUSTOM SUBTITLE TEXT",
         price: "100$",
         customHeight: "large"
-      }
+      },
     >
       <!-- Interactive hotspots for Android WebXR - hidden in web view -->
-      <button
-        class="hotspot action-hotspot"
-        slot="hotspot-1"
-        data-position="0.2m 0.15m 0m"
+      <button 
+        class="hotspot action-hotspot" 
+        slot="hotspot-1" 
+        data-position="0.2m 0.15m 0m" 
         data-normal="1m 0m 0m"
         onclick="handleHotspotClick('action')"
       >
         🎮 Play Game
       </button>
-
-      <button
-        class="hotspot"
-        slot="hotspot-2"
-        data-position="-0.2m 0.15m 0m"
+      
+      <button 
+        class="hotspot" 
+        slot="hotspot-2" 
+        data-position="-0.2m 0.15m 0m" 
         data-normal="-1m 0m 0m"
         onclick="handleHotspotClick('info')"
       >
         ℹ️ Info
       </button>
-
-      <button
-        class="hotspot"
-        slot="hotspot-3"
-        data-position="0m 0.2m 0m"
+      
+      <button 
+        class="hotspot" 
+        slot="hotspot-3" 
+        data-position="0m 0.2m 0m" 
         data-normal="0m 1m 0m"
         onclick="handleHotspotClick('share')"
       >
@@ -234,7 +233,10 @@
       <button class="ar-btn" id="customAR">
         <span class="btn-icon">🕶️</span> Xem AR
       </button>
-      <button class="link-btn" onclick="window.open('https://store.epicgames.com/vi', '_blank')">
+      <button
+        class="link-btn"
+        onclick="window.open('https://store.epicgames.com/vi', '_blank')"
+      >
         <span class="btn-icon">▶️</span> Ghé Thăm
       </button>
     </div>
@@ -253,9 +255,9 @@
 
       // iOS AR Quick Look button listener
       if (isIOS && arLink) {
-        arLink.addEventListener("message", function (event) {
+        arLink.addEventListener("message", function(event) {
           console.log("iOS AR Quick Look message:", event.data);
-
+          
           if (event.data === "_apple_ar_quicklook_button_tapped") {
             // Handle the native iOS AR button tap
             handleIOSARButtonTap();
@@ -266,48 +268,42 @@
       // Handle iOS AR button tap
       function handleIOSARButtonTap() {
         console.log("iOS AR button tapped!");
-
+        
         // Multiple action options for iOS AR button
         const actions = [
-          {
-            name: "🎮 Play Game",
+          { 
+            name: "🎮 Play Game", 
             action: () => {
-              window.open("https://store.epicgames.com/vi", "_blank");
-            },
+              window.open('https://store.epicgames.com/vi', '_blank');
+            }
           },
-          {
-            name: "📱 Share Experience",
+          { 
+            name: "📱 Share Experience", 
             action: () => {
               if (navigator.share) {
                 navigator.share({
-                  title: "Amazing AR Experience!",
-                  text: "Check out this incredible BABY1M AR model!",
-                  url: window.location.href,
+                  title: 'Amazing AR Experience!',
+                  text: 'Check out this incredible BABY1M AR model!',
+                  url: window.location.href
                 });
               } else {
                 navigator.clipboard.writeText(window.location.href);
-                alert("Link copied to clipboard!");
+                alert('Link copied to clipboard!');
               }
-            },
+            }
           },
-          {
-            name: "ℹ️ More Info",
+          { 
+            name: "ℹ️ More Info", 
             action: () => {
-              alert(
-                "BABY1M AR Experience\n\nPremium 3D content with interactive features!\n\nExplore the model in AR and discover hidden details."
-              );
-            },
-          },
+              alert('BABY1M AR Experience\n\nPremium 3D content with interactive features!\n\nExplore the model in AR and discover hidden details.');
+            }
+          }
         ];
-
+        
         // Show action sheet (iOS style)
-        const actionText = actions
-          .map((item, index) => `${index + 1}. ${item.name}`)
-          .join("\n");
-        const choice = prompt(
-          `Choose an action:\n\n${actionText}\n\nEnter number (1-${actions.length}):`
-        );
-
+        const actionText = actions.map((item, index) => `${index + 1}. ${item.name}`).join('\n');
+        const choice = prompt(`Choose an action:\n\n${actionText}\n\nEnter number (1-${actions.length}):`);
+        
         const actionIndex = parseInt(choice) - 1;
         if (actionIndex >= 0 && actionIndex < actions.length) {
           actions[actionIndex].action();
@@ -315,32 +311,30 @@
       }
 
       // Handle hotspot clicks in AR (for Android WebXR)
-      window.handleHotspotClick = function (action) {
-        console.log("Hotspot clicked:", action);
-
-        switch (action) {
-          case "action":
+      window.handleHotspotClick = function(action) {
+        console.log('Hotspot clicked:', action);
+        
+        switch(action) {
+          case 'action':
             // Navigate to game or trigger action
-            window.open("https://store.epicgames.com/vi", "_blank");
+            window.open('https://store.epicgames.com/vi', '_blank');
             break;
-          case "info":
+          case 'info':
             // Show info popup or navigate
-            alert(
-              "BABY1M Model Information\n\nThis is a premium 3D model demonstration with AR capabilities.\n\nFeatures:\n• Interactive AR experience\n• Cross-platform compatibility\n• High-quality 3D rendering"
-            );
+            alert('BABY1M Model Information\n\nThis is a premium 3D model demonstration with AR capabilities.\n\nFeatures:\n• Interactive AR experience\n• Cross-platform compatibility\n• High-quality 3D rendering');
             break;
-          case "share":
+          case 'share':
             // Share functionality
             if (navigator.share) {
               navigator.share({
-                title: "Check out this AR experience!",
-                text: "Amazing BABY1M 3D model in AR!",
-                url: window.location.href,
+                title: 'Check out this AR experience!',
+                text: 'Amazing BABY1M 3D model in AR!',
+                url: window.location.href
               });
             } else {
               // Fallback
               navigator.clipboard.writeText(window.location.href);
-              alert("Link copied to clipboard!");
+              alert('Link copied to clipboard!');
             }
             break;
         }
@@ -362,7 +356,9 @@
         // Handle background music for iOS
         if (isIOS && bgm.paused) {
           bgm.currentTime = 0;
-          bgm.play().catch((err) => console.log("Không phát được nhạc trên iOS:", err));
+          bgm
+            .play()
+            .catch((err) => console.log("Không phát được nhạc trên iOS:", err));
         }
       });
 
@@ -371,30 +367,30 @@
         if (event.detail.status === "session-started") {
           bgm.currentTime = 0;
           bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
-          arInfo.classList.add("show");
-
+          arInfo.classList.add('show');
+          
           // Set AR status attribute to show hotspots
-          mv.setAttribute("ar-status", "session-started");
-
+          mv.setAttribute('ar-status', 'session-started');
+          
           // Update info text based on platform
           if (isIOS) {
             arInfoText.textContent = "Look for the banner button in AR Quick Look to interact!";
           } else {
             arInfoText.textContent = "Tap on the glowing hotspots around the model to interact with them.";
           }
-
+          
           // Hide info after 5 seconds
           setTimeout(() => {
-            arInfo.classList.remove("show");
+            arInfo.classList.remove('show');
           }, 5000);
-
+          
         } else if (event.detail.status === "not-presenting") {
           bgm.pause();
           bgm.currentTime = 0;
-          arInfo.classList.remove("show");
-
+          arInfo.classList.remove('show');
+          
           // Remove AR status attribute to hide hotspots
-          mv.removeAttribute("ar-status");
+          mv.removeAttribute('ar-status');
         }
       });
 
@@ -465,83 +461,127 @@
       window.addEventListener("orientationchange", () => {
         setTimeout(() => {
           // Refresh AR session if needed
-          if (mv.getAttribute("ar-status") === "session-started") {
+          if (mv.getAttribute('ar-status') === 'session-started') {
             console.log("Orientation changed in AR mode");
           }
         }, 500);
       });
 
-      /* ===============================
-         FOLLOW CAMERA + TELEPORT OBJECT
-         (added without removing your code)
-         =============================== */
-      let followCamera = false;
-      let frameHandle = null;
-      let lastCameraPos = null;
+      // === TELEPORT OBJECT FOLLOW CAMERA IN AR MODE ===
+      // Giữ nguyên code gốc, chỉ thêm phần này để model luôn đứng trước camera khi đang AR.
+      let teleportEnabled = true; // bật/tắt theo dõi
+      let lastXrRequestId = null;
+      let xrLoopRunning = false;
 
-      // add a second ar-status listener for follow/teleport (safe to coexist)
+      // Rotate a vector (vx,vy,vz) by a quaternion q = {x,y,z,w}
+      function rotateVectorByQuat(v, q) {
+        // Quaternion-vector multiplication: q * v * q_conjugate
+        const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
+        // v as quaternion
+        const vx = v.x, vy = v.y, vz = v.z;
+        // t = 2 * cross(q.xyz, v)
+        const tx = 2 * (qy * vz - qz * vy);
+        const ty = 2 * (qz * vx - qx * vz);
+        const tz = 2 * (qx * vy - qy * vx);
+        // v' = v + qw * t + cross(q.xyz, t)
+        const vpx = vx + qw * tx + (qy * tz - qz * ty);
+        const vpy = vy + qw * ty + (qz * tx - qx * tz);
+        const vpz = vz + qw * tz + (qx * ty - qy * tx);
+        return { x: vpx, y: vpy, z: vpz };
+      }
+
+      // Cập nhật vị trí model dựa trên frame XR
+      function onXrFrame(time, frame) {
+        // Lưu id callback để có thể cancel nếu cần
+        // (note: when using session.requestAnimationFrame, return value is integer id)
+        // Trong model-viewer, chúng ta dùng mv.xrSession.requestAnimationFrame
+        try {
+          if (!teleportEnabled || mv.getAttribute("ar-status") !== "session-started") {
+            xrLoopRunning = false;
+            return;
+          }
+
+          const refSpace = mv.xrReferenceSpace;
+          if (!frame || !refSpace) {
+            // tiếp tục vòng lặp nếu reference không sẵn sàng
+            if (mv.xrSession) {
+              lastXrRequestId = mv.xrSession.requestAnimationFrame(onXrFrame);
+            }
+            return;
+          }
+
+          const pose = frame.getViewerPose(refSpace);
+          if (pose && pose.views && pose.views.length > 0) {
+            const view = pose.views[0];
+            const pos = view.transform.position;
+            const orient = view.transform.orientation; // quaternion {x,y,z,w}
+
+            // forward vector in view-space is (0,0,-1)
+            const forward = rotateVectorByQuat({ x: 0, y: 0, z: -1 }, orient);
+
+            // khoảng cách muốn đặt model trước camera (mét)
+            const distance = 0.5;
+
+            const target = {
+              x: pos.x + forward.x * distance,
+              y: pos.y + forward.y * distance,
+              z: pos.z + forward.z * distance,
+            };
+
+            // Đặt position cho model-viewer (chuỗi: "x y z")
+            mv.setAttribute("position", `${target.x} ${target.y} ${target.z}`);
+            // (tùy model-viewer / GLTF: model có thể cần scale/rotation phù hợp)
+            // nếu bạn muốn nâng model cao hơn so với camera, tăng target.y thêm +0.1...
+          }
+
+          // tiếp tục vòng lặp
+          if (mv.xrSession) {
+            lastXrRequestId = mv.xrSession.requestAnimationFrame(onXrFrame);
+          } else {
+            xrLoopRunning = false;
+          }
+        } catch (e) {
+          console.warn("Teleport XR frame error:", e);
+          xrLoopRunning = false;
+        }
+      }
+
+      // Khi AR bắt đầu, khởi động loop XR
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
-          console.log("🔹 AR start - follow camera + teleport");
-          followCamera = true;
-          startFollowCamera();
+          if (mv.xrSession && !xrLoopRunning) {
+            xrLoopRunning = true;
+            try {
+              lastXrRequestId = mv.xrSession.requestAnimationFrame(onXrFrame);
+              console.log("🔄 Teleport follow-camera started");
+            } catch (e) {
+              console.warn("Không thể bắt đầu XR loop:", e);
+              xrLoopRunning = false;
+            }
+          }
         } else if (event.detail.status === "not-presenting") {
-          console.log("🔹 AR end");
-          followCamera = false;
-          cancelAnimationFrame(frameHandle);
-          // reset lastCameraPos to force teleport on next enter
-          lastCameraPos = null;
+          // Hủy callback nếu có
+          if (mv.xrSession && lastXrRequestId != null) {
+            try {
+              mv.xrSession.cancelAnimationFrame(lastXrRequestId);
+            } catch (e) {
+              // ignore
+            }
+            lastXrRequestId = null;
+          }
+          xrLoopRunning = false;
+          console.log("⛔ Teleport follow-camera stopped");
         }
       });
 
-      function startFollowCamera() {
-        const THREE = mv?.THREE || window.MVThree || self.MVThree;
+      // Optional: expose a small toggle for debugging in console
+      window.__teleportToggle = function(enabled) {
+        teleportEnabled = !!enabled;
+        console.log("teleportEnabled =", teleportEnabled);
+      };
+      // Usage: trong console gõ __teleportToggle(false) để tắt theo dõi, __teleportToggle(true) để bật lại.
 
-        if (!THREE || !mv.scene || !mv.model) {
-          console.warn("⏳ Chưa sẵn sàng THREE hoặc model");
-          frameHandle = requestAnimationFrame(startFollowCamera);
-          return;
-        }
-
-        const scene = mv.scene;
-        const model = mv.model;
-        const camera = scene.camera;
-        const distance = 1.0; // model đứng trước camera (m)
-        const teleportThreshold = 0.4; // teleport nếu camera di chuyển > 0.4 m
-
-        function update() {
-          if (followCamera && camera && model) {
-            const currentPos = camera.position.clone();
-
-            if (!lastCameraPos) {
-              // first time: teleport model immediately in front of camera
-              teleportModel();
-              lastCameraPos = currentPos.clone();
-            }
-
-            const moveDistance = currentPos.distanceTo(lastCameraPos);
-            if (moveDistance > teleportThreshold) {
-              console.log(`⚡ Teleport model (${moveDistance.toFixed(2)}m)`);
-              teleportModel();
-              lastCameraPos.copy(currentPos);
-            }
-          }
-          frameHandle = requestAnimationFrame(update);
-        }
-
-        function teleportModel() {
-          // compute forward vector from camera quaternion
-          const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-          const targetPos = new THREE.Vector3()
-            .copy(camera.position)
-            .add(forward.multiplyScalar(distance));
-
-          model.position.copy(targetPos);
-          model.quaternion.copy(camera.quaternion);
-        }
-
-        update();
-      }
+      // === END TELEPORT SECTION ===
     </script>
   </body>
 </html>
