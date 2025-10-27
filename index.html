@@ -2,34 +2,24 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>AR Camera Lock Demo</title>
-    <script
-      type="module"
-      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
-    ></script>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
-      html,
-      body {
+      html, body {
         margin: 0;
         height: 100%;
         background: #0b0c10;
         color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
-          sans-serif;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
         overflow: hidden;
       }
-      
       model-viewer {
         width: 100%;
         height: 100%;
         --ar-button-display: none;
         background: #0b0c10;
       }
-      
       .hotspot {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
         border-radius: 20px;
@@ -46,38 +36,26 @@
         text-align: center;
         display: none !important;
       }
-      
       model-viewer[ar-status="session-started"] .hotspot {
         display: block !important;
       }
-      
       .hotspot:hover {
         background: linear-gradient(135deg, #ff5555, #e91e63);
         transform: scale(1.1);
         box-shadow: 0 6px 20px rgba(255, 59, 59, 0.6);
       }
-      
       .action-hotspot {
         background: linear-gradient(135deg, #ffd700, #ff8c00);
         color: #1a1a1a;
         animation: pulse 2s infinite;
       }
-      
       .action-hotspot:hover {
         background: linear-gradient(135deg, #ffed4e, #ffa500);
       }
-      
       @keyframes pulse {
-        0%, 100% {
-          transform: scale(1);
-          box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
-        }
-        50% {
-          transform: scale(1.05);
-          box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-        }
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6); }
       }
-      
       .button-group {
         position: absolute;
         bottom: 30px;
@@ -90,13 +68,11 @@
         pointer-events: none;
         transition: opacity 0.8s ease, transform 0.8s ease;
       }
-      
       .button-group.show {
         opacity: 1;
         pointer-events: auto;
         transform: translateX(-50%) translateY(0);
       }
-      
       .button-group button {
         flex: 1;
         width: 160px;
@@ -114,50 +90,22 @@
         transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
         backdrop-filter: blur(12px);
       }
-      
       .button-group button:hover {
         transform: translateY(-2px);
         filter: brightness(1.1);
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
       }
-      
-      .button-group button:active {
-        transform: scale(0.95);
-      }
-      
-      .ar-btn {
-        background: linear-gradient(135deg, #ffd700, #ff8c00);
-        color: #1a1a1a;
-      }
-      
-      .link-btn {
-        background: linear-gradient(135deg, #ff3b3b, #d81b60);
-        color: #fff;
-      }
-      
-      .btn-icon {
-        font-size: 20px;
-        transform: translateY(1px);
-      }
-      
+      .button-group button:active { transform: scale(0.95); }
+      .ar-btn { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #1a1a1a; }
+      .link-btn { background: linear-gradient(135deg, #ff3b3b, #d81b60); color: #fff; }
+      .btn-icon { font-size: 20px; transform: translateY(1px); }
       .ar-info {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 15px;
-        border-radius: 12px;
-        font-size: 14px;
-        backdrop-filter: blur(10px);
-        z-index: 100;
-        display: none;
+        position: absolute; top: 20px; left: 20px; right: 20px;
+        background: rgba(0, 0, 0, 0.8); color: white;
+        padding: 15px; border-radius: 12px; font-size: 14px;
+        backdrop-filter: blur(10px); z-index: 100; display: none;
       }
-      
-      .ar-info.show {
-        display: block;
-      }
+      .ar-info.show { display: block; }
     </style>
   </head>
   <body>
@@ -180,45 +128,22 @@
       camera-orbit="0deg 75deg 1.5m"
       field-of-view="45deg"
     >
-      <button 
-        class="hotspot action-hotspot" 
-        slot="hotspot-1" 
-        data-position="0.2m 0.15m 0m" 
-        data-normal="1m 0m 0m"
-        onclick="handleHotspotClick('action')"
-      >
-        🎮 Play Game
-      </button>
-      
-      <button 
-        class="hotspot" 
-        slot="hotspot-2" 
-        data-position="-0.2m 0.15m 0m" 
-        data-normal="-1m 0m 0m"
-        onclick="handleHotspotClick('info')"
-      >
-        ℹ️ Info
-      </button>
-      
-      <button 
-        class="hotspot" 
-        slot="hotspot-3" 
-        data-position="0m 0.2m 0m" 
-        data-normal="0m 1m 0m"
-        onclick="handleHotspotClick('share')"
-      >
-        📱 Share
-      </button>
+      <button class="hotspot action-hotspot" slot="hotspot-1"
+        data-position="0.2m 0.15m 0m" data-normal="1m 0m 0m"
+        onclick="handleHotspotClick('action')">🎮 Play Game</button>
+      <button class="hotspot" slot="hotspot-2"
+        data-position="-0.2m 0.15m 0m" data-normal="-1m 0m 0m"
+        onclick="handleHotspotClick('info')">ℹ️ Info</button>
+      <button class="hotspot" slot="hotspot-3"
+        data-position="0m 0.2m 0m" data-normal="0m 1m 0m"
+        onclick="handleHotspotClick('share')">📱 Share</button>
     </model-viewer>
 
     <div class="button-group" id="btnGroup">
       <button class="ar-btn" id="customAR">
         <span class="btn-icon">🕶️</span> Xem AR
       </button>
-      <button
-        class="link-btn"
-        onclick="window.open('https://store.epicgames.com/vi', '_blank')"
-      >
+      <button class="link-btn" onclick="window.open('https://store.epicgames.com/vi', '_blank')">
         <span class="btn-icon">▶️</span> Ghé Thăm
       </button>
     </div>
@@ -233,27 +158,17 @@
       const arInfo = document.getElementById("arInfo");
       const arInfoText = document.getElementById("arInfoText");
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      
+
       let arSession = null;
       let cameraLockEnabled = false;
 
       window.handleHotspotClick = function(action) {
-        console.log('Hotspot clicked:', action);
-        
         switch(action) {
-          case 'action':
-            window.open('https://store.epicgames.com/vi', '_blank');
-            break;
-          case 'info':
-            alert('BABY1M Model - Camera Locked\n\nObject luôn theo camera!\n\nDi chuyển camera đi đâu, object sẽ theo đó.');
-            break;
+          case 'action': window.open('https://store.epicgames.com/vi', '_blank'); break;
+          case 'info': alert('BABY1M Model - Camera Locked'); break;
           case 'share':
             if (navigator.share) {
-              navigator.share({
-                title: 'AR Camera Lock Experience!',
-                text: 'Check out this camera-locked AR model!',
-                url: window.location.href
-              });
+              navigator.share({ title: 'AR Camera Lock', text: 'Check this out!', url: window.location.href });
             } else {
               navigator.clipboard.writeText(window.location.href);
               alert('Link copied!');
@@ -262,80 +177,71 @@
         }
       };
 
-      // Hàm lock object vào camera
-      function lockObjectToCamera() {
-        if (!mv || !cameraLockEnabled) return;
-        
-        try {
-          // Lấy camera position và orientation
-          const camera = mv.getCameraOrbit();
-          const target = mv.getCameraTarget();
-          
-          // Tính toán vị trí mới dựa trên camera
-          // Object sẽ luôn ở phía trước camera với khoảng cách cố định
-          const distance = 1.5; // Khoảng cách từ camera (meters)
-          const heightOffset = -0.3; // Độ cao so với tầm nhìn
-          
-          // Cập nhật vị trí model để theo camera
-          const theta = camera.theta;
-          const phi = camera.phi;
-          
-          // Chuyển đổi từ spherical sang cartesian coordinates
-          const x = distance * Math.sin(phi) * Math.cos(theta);
-          const y = distance * Math.cos(phi) + heightOffset;
-          const z = distance * Math.sin(phi) * Math.sin(theta);
-          
-          // Set camera target để object luôn ở trung tâm
-          mv.cameraTarget = `${x}m ${y}m ${z}m`;
-          
-        } catch (err) {
-          console.log("Camera lock error:", err);
+      // 🔹 Hàm giữ model trước camera trong AR mode
+      function lockModelToCameraXR(xrFrame) {
+        if (!cameraLockEnabled || !mv.xrSession) return;
+
+        const refSpace = mv.xrReferenceSpace;
+        const viewerPose = xrFrame.getViewerPose(refSpace);
+        if (!viewerPose) return;
+
+        const view = viewerPose.views[0];
+        const camTransform = view.transform;
+
+        // Khoảng cách & độ cao
+        const forwardDistance = 1.2; 
+        const offsetY = -0.3;        
+
+        // Lấy hướng nhìn camera (trục -Z)
+        const q = camTransform.orientation;
+        const dirZ = { 
+          x: -2 * (q.x * q.z + q.w * q.y),
+          y: -2 * (q.y * q.z - q.w * q.x),
+          z: -1 + 2 * (q.x * q.x + q.y * q.y)
+        };
+
+        const pos = camTransform.position;
+        const newPos = {
+          x: pos.x + dirZ.x * forwardDistance,
+          y: pos.y + offsetY,
+          z: pos.z + dirZ.z * forwardDistance,
+        };
+
+        const root = mv.model?.modelRoot;
+        if (root) {
+          root.position.set(newPos.x, newPos.y, newPos.z);
+          // 👉 Nếu không muốn model xoay theo đầu, comment dòng sau:
+          root.orientation.copy(camTransform.orientation);
         }
-        
-        // Tiếp tục update mỗi frame
-        if (cameraLockEnabled) {
-          requestAnimationFrame(lockObjectToCamera);
-        }
+
+        mv.xrSession.requestAnimationFrame((t, f) => lockModelToCameraXR(f));
       }
 
       customAR.addEventListener("click", async (event) => {
         event.preventDefault();
-        try {
-          await mv.activateAR();
-        } catch (err) {
-          console.log("Kích hoạt AR thất bại:", err);
-        }
+        try { await mv.activateAR(); }
+        catch (err) { console.log("AR failed:", err); }
 
         if (isIOS && bgm.paused) {
           bgm.currentTime = 0;
-          bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
+          bgm.play().catch(() => {});
         }
       });
 
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
-          console.log("AR Session started - Enabling camera lock");
           cameraLockEnabled = true;
-          
-          bgm.currentTime = 0;
-          bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
+          arSession = mv.xrSession;
           arInfo.classList.add('show');
-          
+          arInfoText.textContent = "Object đang được lock trước camera.";
+          setTimeout(() => arInfo.classList.remove('show'), 5000);
+          bgm.currentTime = 0;
+          bgm.play().catch(() => {});
           mv.setAttribute('ar-status', 'session-started');
-          
-          arInfoText.textContent = "Object đang được lock vào camera! Di chuyển xung quanh để thấy hiệu ứng.";
-          
-          setTimeout(() => {
-            arInfo.classList.remove('show');
-          }, 5000);
-          
-          // Bắt đầu camera lock loop
-          lockObjectToCamera();
-          
+          arSession.requestAnimationFrame((t, f) => lockModelToCameraXR(f));
         } else if (event.detail.status === "not-presenting") {
-          console.log("AR Session ended");
           cameraLockEnabled = false;
-          
+          arSession = null;
           bgm.pause();
           bgm.currentTime = 0;
           arInfo.classList.remove('show');
@@ -343,70 +249,22 @@
         }
       });
 
-      // Handle camera changes in AR
-      mv.addEventListener("camera-change", () => {
-        if (cameraLockEnabled) {
-          // Camera đang thay đổi, update object position
-          lockObjectToCamera();
-        }
-      });
-
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          bgm.pause();
-          bgm.currentTime = 0;
-        }
-      });
-
-      window.addEventListener("pagehide", () => {
-        bgm.pause();
-        bgm.currentTime = 0;
-      });
-
       mv.addEventListener("load", () => {
         const animations = mv.availableAnimations;
-
         if (animations && animations.length > 0) {
           mv.animationName = animations[0];
           mv.animationLoop = false;
           mv.play();
-
           const lockAtEnd = () => {
-            const duration = mv.duration;
-            const currentTime = mv.currentTime;
-
-            if (duration && currentTime >= duration - 0.1) {
+            if (mv.duration && mv.currentTime >= mv.duration - 0.1) {
               mv.timeScale = 0.0;
               btnGroup.classList.add("show");
-            } else {
-              requestAnimationFrame(lockAtEnd);
-            }
+            } else requestAnimationFrame(lockAtEnd);
           };
-
           requestAnimationFrame(lockAtEnd);
         } else {
-          console.log("Không tìm thấy animation.");
           setTimeout(() => btnGroup.classList.add("show"), 1000);
         }
-      });
-
-      mv.addEventListener("error", (event) => {
-        console.error("Model loading error:", event);
-        setTimeout(() => btnGroup.classList.add("show"), 2000);
-      });
-
-      mv.addEventListener("progress", (event) => {
-        const progress = event.detail.totalProgress;
-        console.log(`Loading: ${Math.round(progress * 100)}%`);
-      });
-
-      window.addEventListener("orientationchange", () => {
-        setTimeout(() => {
-          if (mv.getAttribute('ar-status') === 'session-started') {
-            console.log("Orientation changed - recalculating lock");
-            lockObjectToCamera();
-          }
-        }, 500);
       });
     </script>
   </body>
