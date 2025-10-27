@@ -2,20 +2,11 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Follow Camera Smooth</title>
+    <title>AR Follow Camera Hard</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
-      html, body {
-        margin: 0;
-        height: 100%;
-        background: #000;
-        overflow: hidden;
-      }
-      model-viewer {
-        width: 100%;
-        height: 100%;
-        background: #000;
-      }
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+      model-viewer { width: 100%; height: 100%; background: #000; }
       .ar-btn {
         position: absolute;
         bottom: 24px;
@@ -57,17 +48,16 @@
 
       let follow = false;
       let frameHandle;
-      const distance = 1.0; // khoảng cách model trước camera (1m)
-      const smoothFactor = 0.35; // hệ số mượt (0.1–0.3 là hợp lý)
+      const distance = 1.0; // 1 mét trước mặt
 
-      const tmpTargetPos = new THREE.Vector3();
       const tmpOffset = new THREE.Vector3();
+      const tmpTarget = new THREE.Vector3();
 
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
           follow = true;
-          console.log("🚀 AR started — object will follow camera");
-          followModelToCamera();
+          console.log("🚀 AR started — object locked to camera");
+          updateFollow();
         } else if (event.detail.status === "not-presenting") {
           follow = false;
           cancelAnimationFrame(frameHandle);
@@ -75,30 +65,26 @@
         }
       });
 
-      function followModelToCamera() {
+      function updateFollow() {
+        if (!follow) return;
+
         const scene = mv.scene;
         const camera = scene?.camera;
         const model = mv.model;
 
-        if (!camera || !model) {
-          frameHandle = requestAnimationFrame(followModelToCamera);
-          return;
+        if (camera && model) {
+          // offset cố định 1m trước mặt camera
+          tmpOffset.set(0, 0, -distance);
+          tmpOffset.applyQuaternion(camera.quaternion);
+          tmpTarget.copy(camera.position).add(tmpOffset);
+
+          // đặt trực tiếp — không smooth
+          model.position.copy(tmpTarget);
+          model.quaternion.copy(camera.quaternion);
         }
 
-        // Tính vị trí target trước mặt camera
-        tmpOffset.set(0, 0, -distance);
-        tmpOffset.applyQuaternion(camera.quaternion);
-        tmpTargetPos.copy(camera.position).add(tmpOffset);
-
-        // LERP vị trí model → target (làm mượt)
-        model.position.lerp(tmpTargetPos, smoothFactor);
-
-        // LERP hướng model → hướng camera
-        model.quaternion.slerp(camera.quaternion, smoothFactor);
-
-        frameHandle = requestAnimationFrame(followModelToCamera);
+        frameHandle = requestAnimationFrame(updateFollow);
       }
     </script>
   </body>
 </html>
-
