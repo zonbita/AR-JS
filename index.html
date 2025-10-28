@@ -6,15 +6,12 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>AR Demo - Follow Camera</title>
+    <title>AR Demo - Fixed Object</title>
 
-    <!-- model-viewer -->
     <script
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
     ></script>
-    <!-- three.js (required for vector/quaternion math) -->
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 
     <style>
       html,
@@ -23,8 +20,7 @@
         height: 100%;
         background: #0b0c10;
         color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
-          sans-serif;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
         overflow: hidden;
       }
 
@@ -35,7 +31,7 @@
         background: #0b0c10;
       }
 
-      /* Hotspot styling - these will appear ONLY in AR for Android */
+      /* Hotspot styling */
       .hotspot {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
         border-radius: 20px;
@@ -50,12 +46,9 @@
         backdrop-filter: blur(10px);
         min-width: 120px;
         text-align: center;
-
-        /* Hide in web view, only show in AR */
         display: none !important;
       }
 
-      /* Show hotspots only when in AR mode */
       model-viewer[ar-status="session-started"] .hotspot {
         display: block !important;
       }
@@ -77,7 +70,8 @@
       }
 
       @keyframes pulse {
-        0%, 100% {
+        0%,
+        100% {
           transform: scale(1);
           box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
         }
@@ -171,10 +165,13 @@
       }
     </style>
   </head>
+
   <body>
     <div class="ar-info" id="arInfo">
-      <strong>🎯 AR Mode Active!</strong><br>
-      <span id="arInfoText">Tap on the glowing hotspots around the model to interact with them.</span>
+      <strong>🎯 AR Mode Active!</strong><br />
+      <span id="arInfoText">
+        Tap on the glowing hotspots around the model to interact with them.
+      </span>
     </div>
 
     <model-viewer
@@ -184,47 +181,37 @@
       ar
       ar-modes="webxr quick-look"
       ar-scale="auto"
-      ar-placement="floor"
-      alt="BABY1M"
-      scale="0.5 0.5 0.5"
+      ar-placement="viewer"
       camera-controls
-      quickLook: {
-        title: "CUSTOM TITLE",
-        allowsContentScaling: false,
-        canonicalWebPageURL: "https://github.com/naver/egjs-view3d",
-        applePayButtonType: "subscribe",
-        callToAction: "CUSTOM BUTTON TEXT",
-        checkoutTitle: "CUSTOM TITLE TEXT",
-        checkoutSubtitle: "CUSTOM SUBTITLE TEXT",
-        price: "100$",
-        customHeight: "large"
-      }
+      scale="0.5 0.5 0.5"
+      data-position="0 0 -0.5m"
+      alt="BABY1M"
     >
-      <!-- Interactive hotspots for Android WebXR - hidden in web view -->
-      <button 
-        class="hotspot action-hotspot" 
-        slot="hotspot-1" 
-        data-position="0.2m 0.15m 0m" 
+      <!-- Hotspots -->
+      <button
+        class="hotspot action-hotspot"
+        slot="hotspot-1"
+        data-position="0.2m 0.15m 0m"
         data-normal="1m 0m 0m"
         onclick="handleHotspotClick('action')"
       >
         🎮 Play Game
       </button>
-      
-      <button 
-        class="hotspot" 
-        slot="hotspot-2" 
-        data-position="-0.2m 0.15m 0m" 
+
+      <button
+        class="hotspot"
+        slot="hotspot-2"
+        data-position="-0.2m 0.15m 0m"
         data-normal="-1m 0m 0m"
         onclick="handleHotspotClick('info')"
       >
         ℹ️ Info
       </button>
-      
-      <button 
-        class="hotspot" 
-        slot="hotspot-3" 
-        data-position="0m 0.2m 0m" 
+
+      <button
+        class="hotspot"
+        slot="hotspot-3"
+        data-position="0m 0.2m 0m"
         data-normal="0m 1m 0m"
         onclick="handleHotspotClick('share')"
       >
@@ -255,33 +242,34 @@
       const arInfoText = document.getElementById("arInfoText");
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-      // Handle hotspot clicks in AR (for Android WebXR)
-      window.handleHotspotClick = function(action) {
-        console.log('Hotspot clicked:', action);
-        
-        switch(action) {
-          case 'action':
-            window.open('https://store.epicgames.com/vi', '_blank');
+      // Hotspot click handler
+      window.handleHotspotClick = function (action) {
+        console.log("Hotspot clicked:", action);
+        switch (action) {
+          case "action":
+            window.open("https://store.epicgames.com/vi", "_blank");
             break;
-          case 'info':
-            alert('BABY1M Model Information\n\nThis is a premium 3D model demonstration with AR capabilities.\n\nFeatures:\n• Interactive AR experience\n• Cross-platform compatibility\n• High-quality 3D rendering');
+          case "info":
+            alert(
+              "BABY1M Model Information\n\nThis is a premium 3D model demonstration with AR capabilities.\n\nFeatures:\n• Interactive AR experience\n• Cross-platform compatibility\n• High-quality 3D rendering"
+            );
             break;
-          case 'share':
+          case "share":
             if (navigator.share) {
               navigator.share({
-                title: 'Check out this AR experience!',
-                text: 'Amazing BABY1M 3D model in AR!',
-                url: window.location.href
+                title: "Check out this AR experience!",
+                text: "Amazing BABY1M 3D model in AR!",
+                url: window.location.href,
               });
             } else {
               navigator.clipboard.writeText(window.location.href);
-              alert('Link copied to clipboard!');
+              alert("Link copied to clipboard!");
             }
             break;
         }
       };
 
-      // AR button click handler
+      // Activate AR manually
       customAR.addEventListener("click", async (event) => {
         event.preventDefault();
         try {
@@ -290,146 +278,51 @@
           console.log("Kích hoạt AR thất bại:", err);
         }
 
-        // Handle background music for iOS
-        if (isIOS && bgm.paused) {
+        if (bgm.paused) {
           bgm.currentTime = 0;
-          bgm
-            .play()
-            .catch((err) => console.log("Không phát được nhạc trên iOS:", err));
+          bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
         }
       });
 
-      // Handle AR status changes
+      // Handle AR session status
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
           bgm.currentTime = 0;
           bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
-          arInfo.classList.add('show');
-          mv.setAttribute('ar-status', 'session-started');
-
-          if (isIOS) {
-            arInfoText.textContent = "Look for the banner button in AR Quick Look to interact!";
-          } else {
-            arInfoText.textContent = "Tap on the glowing hotspots around the model to interact with them.";
-          }
-
+          arInfo.classList.add("show");
+          mv.setAttribute("ar-status", "session-started");
+          arInfoText.textContent =
+            "Object locked to your view — move camera, it stays fixed!";
           setTimeout(() => {
-            arInfo.classList.remove('show');
+            arInfo.classList.remove("show");
           }, 5000);
-
-          // Ensure buttons are visible in AR after small delay
-          setTimeout(() => btnGroup.classList.add("show"), 800);
-
         } else if (event.detail.status === "not-presenting") {
           bgm.pause();
           bgm.currentTime = 0;
-          arInfo.classList.remove('show');
-          mv.removeAttribute('ar-status');
-          btnGroup.classList.remove("show");
+          arInfo.classList.remove("show");
+          mv.removeAttribute("ar-status");
         }
       });
 
-      // Handle page visibility and lifecycle
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          bgm.pause();
-          bgm.currentTime = 0;
-        }
-      });
-
-      window.addEventListener("pagehide", () => {
-        bgm.pause();
-        bgm.currentTime = 0;
-      });
-
-      // Handle model loading and animations
+      // Handle model load
       mv.addEventListener("load", () => {
         const animations = mv.availableAnimations;
-
         if (animations && animations.length > 0) {
           mv.animationName = animations[0];
           mv.animationLoop = false;
           mv.play();
 
-          // Monitor animation progress and lock at end
           const lockAtEnd = () => {
-            const duration = mv.duration;
-            const currentTime = mv.currentTime;
-
-            if (duration && currentTime >= duration - 0.1) {
+            if (mv.duration && mv.currentTime >= mv.duration - 0.1) {
               mv.timeScale = 0.0;
               btnGroup.classList.add("show");
             } else {
               requestAnimationFrame(lockAtEnd);
             }
           };
-
           requestAnimationFrame(lockAtEnd);
         } else {
-          console.log("Không tìm thấy animation trong mô hình.");
           setTimeout(() => btnGroup.classList.add("show"), 1000);
-        }
-      });
-
-      mv.addEventListener("error", (event) => {
-        console.error("Model loading error:", event);
-        setTimeout(() => btnGroup.classList.add("show"), 2000);
-      });
-
-      mv.addEventListener("progress", (event) => {
-        const progress = event.detail.totalProgress;
-        console.log(`Loading progress: ${Math.round(progress * 100)}%`);
-      });
-
-      mv.addEventListener("model-visibility", (event) => {
-        console.log("Model visibility changed:", event.detail.visible);
-      });
-
-      // === ALWAYS FOLLOW CAMERA IN AR ===
-      // The model will always stay in front of the camera at `distanceFromCamera` meters.
-      const distanceFromCamera = 0.5; // meters
-
-      mv.addEventListener('ar-frame', (event) => {
-        try {
-          const xrFrame = event.detail && event.detail.xrFrame;
-          const referenceSpace = event.detail && event.detail.referenceSpace;
-          const viewerPose = xrFrame && referenceSpace ? xrFrame.getViewerPose(referenceSpace) : null;
-
-          if (!viewerPose || !mv.scene) return;
-
-          const cameraTransform = viewerPose.transform;
-          const pos = cameraTransform.position;
-          const ori = cameraTransform.orientation;
-
-          // Build forward vector (camera looks -Z in viewer space)
-          const forward = new THREE.Vector3(0, 0, -1);
-          const quat = new THREE.Quaternion(ori.x, ori.y, ori.z, ori.w);
-          forward.applyQuaternion(quat);
-
-          // Target position = camera position + forward * distance
-          const target = new THREE.Vector3(
-            pos.x + forward.x * distanceFromCamera,
-            pos.y + forward.y * distanceFromCamera,
-            pos.z + forward.z * distanceFromCamera
-          );
-
-          // Set scene position (move root to target)
-          mv.scene.position.set(target.x, target.y, target.z);
-
-          // Optional: keep the model oriented toward the camera (comment out if undesired)
-          const cameraPos = new THREE.Vector3(pos.x, pos.y, pos.z);
-          mv.scene.lookAt(cameraPos);
-        } catch (e) {
-          // Safety: ignore frame errors
-          // console.warn('ar-frame error', e);
-        }
-      });
-
-      // (Optional) small helper: allow changing follow distance via +/- keys (desktop debug)
-      window.addEventListener('keydown', (ev) => {
-        if (ev.key === '+' || ev.key === '=') {
-          // increase distance
-          // not modifying const directly, but for quick debug you can change in code
         }
       });
     </script>
