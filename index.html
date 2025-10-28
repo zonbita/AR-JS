@@ -24,7 +24,7 @@
         z-index: 0;
       }
 
-      /* Model 3D nằm giữa màn hình */
+      /* Model 3D */
       model-viewer {
         position: fixed;
         top: 50%;
@@ -32,25 +32,20 @@
         width: 100%;
         height: 100%;
         transform: translate(-50%, -50%);
-        z-index: 1;
         background: transparent;
+        z-index: 1;
       }
 
-      /* Overlay yêu cầu bật tiếng */
-      #tapOverlay {
+      /* Hiệu ứng mờ dần khi model và âm thanh sẵn sàng */
+      #fadeCover {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        font-size: 1.5em;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        z-index: 10;
-        transition: opacity 0.6s ease;
+        background: #000;
+        z-index: 2;
+        opacity: 1;
+        transition: opacity 1.5s ease;
       }
-      #tapOverlay.hidden {
+      #fadeCover.hidden {
         opacity: 0;
         pointer-events: none;
       }
@@ -61,7 +56,7 @@
     <!-- Camera nền -->
     <video id="camera" autoplay muted playsinline></video>
 
-    <!-- 3D model luôn ở giữa -->
+    <!-- Model 3D -->
     <model-viewer
       id="obj"
       src="embe5.glb"
@@ -75,45 +70,54 @@
       touch-action="pan-y"
     ></model-viewer>
 
-    <!-- Nhạc nền -->
-    <audio id="bgm" src="voice_embe5.MP3" preload="auto" loop></audio>
+    <!-- Âm thanh nền (tự động, muted rồi unmute sau) -->
+    <audio id="bgm" src="voice_embe5.MP3" preload="auto" loop muted></audio>
 
-    <!-- Overlay “chạm để bật tiếng” -->
-    <div id="tapOverlay">🔊 Chạm để bật tiếng</div>
+    <!-- Hiệu ứng fade đen -->
+    <div id="fadeCover"></div>
 
     <script>
       const cameraVideo = document.getElementById("camera");
       const mv = document.getElementById("obj");
       const bgm = document.getElementById("bgm");
-      const tapOverlay = document.getElementById("tapOverlay");
+      const fadeCover = document.getElementById("fadeCover");
 
-      // Bật camera môi trường (AR background)
+      // Mở camera thật (background)
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
         .then((stream) => (cameraVideo.srcObject = stream))
-        .catch((err) => console.error("Lỗi mở camera:", err));
+        .catch((err) => console.error("Lỗi camera:", err));
 
-      // Chạy animation sau khi model load
+      // Khi model load → phát animation
       mv.addEventListener("load", () => {
         if (mv.availableAnimations?.length > 0) {
           mv.play({ animationName: mv.availableAnimations[0] });
         }
       });
 
-      // Thử autoplay nhạc (Android, PC)
-      bgm.play().then(() => {
-        tapOverlay.classList.add("hidden"); // Nếu autoplay được → ẩn overlay
-      }).catch(() => {
-        // Nếu bị chặn (iOS) → chờ user chạm để bật
-        console.log("Autoplay bị chặn, chờ người dùng tương tác.");
-        const enableAudio = () => {
-          bgm.play().catch(err => console.log("Không thể bật nhạc:", err));
-          tapOverlay.classList.add("hidden");
-          document.removeEventListener("touchstart", enableAudio);
-          document.removeEventListener("click", enableAudio);
-        };
-        document.addEventListener("touchstart", enableAudio);
-        document.addEventListener("click", enableAudio);
+      // Phát nhạc autoplay (Android/PC chắc chắn OK, iOS có thể bị muted ban đầu)
+      bgm.play()
+        .then(() => {
+          console.log("Autoplay OK (muted)");
+          // Sau 0.5s thử bật tiếng
+          setTimeout(() => {
+            bgm.muted = false;
+            bgm.volume = 1.0;
+            console.log("Đã bật tiếng (nếu iOS cho phép)");
+            fadeCover.classList.add("hidden");
+          }, 500);
+        })
+        .catch((err) => {
+          console.log("Autoplay bị chặn:", err);
+          fadeCover.classList.add("hidden");
+        });
+
+      // Trong một số trường hợp iOS resume audio context sau tab switch
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          bgm.muted = false;
+          bgm.play().catch(() => {});
+        }
       });
     </script>
   </body>
