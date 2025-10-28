@@ -3,15 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>3D UI Autoplay + Scale Control</title>
-    <script
-      type="module"
-      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
-    ></script>
-
+    <title>3D UI Autoplay Animation</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
-      body,
-      html {
+      body, html {
         margin: 0;
         overflow: hidden;
         background: #000;
@@ -33,29 +28,11 @@
         position: fixed;
         top: 50%;
         left: 50%;
-        width: 100%;
-        height: 100%;
+        width: 80%;
+        height: 80%;
         transform: translate(-50%, -50%);
         z-index: 1;
         background: transparent;
-      }
-
-      /* Slider UI */
-      #scaleControl {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 2;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 10px 20px;
-        border-radius: 12px;
-        color: white;
-        font-family: sans-serif;
-      }
-
-      #scaleControl input {
-        width: 200px;
       }
     </style>
   </head>
@@ -64,27 +41,21 @@
     <!-- Camera background -->
     <video id="camera" autoplay muted playsinline></video>
 
-    <!-- 3D model -->
+    <!-- 3D model always on screen -->
     <model-viewer
       id="obj"
       src="embe5.glb"
       ios-src="embe5.usdz"
       camera-controls
+      auto-rotate
       autoplay
       interaction-prompt="none"
       shadow-intensity="1"
       exposure="1"
     ></model-viewer>
 
-    <!-- Scale control -->
-    <div id="scaleControl">
-      <label for="scaleRange">Scale:</label>
-      <input type="range" id="scaleRange" min="0.1" max="2" step="0.1" value="1" />
-      <span id="scaleValue">1.0x</span>
-    </div>
-
     <script>
-      // Enable camera background
+      // Use real camera for background
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
         .then((stream) => {
@@ -93,27 +64,17 @@
         .catch((err) => console.error("Camera access error:", err));
 
       const mv = document.getElementById("obj");
-      const scaleRange = document.getElementById("scaleRange");
-      const scaleValue = document.getElementById("scaleValue");
 
-      // Play model animation when ready
+      // Ensure animation starts automatically after loading
       mv.addEventListener("load", () => {
         if (mv.availableAnimations && mv.availableAnimations.length > 0) {
+          // Play the first animation automatically
           mv.play({ animationName: mv.availableAnimations[0] });
         } else {
           console.warn("No animation found in model.");
-        }
-
-        // Allow scaling the 3D model
-        const model = mv.model;
-        if (model) {
-          scaleRange.addEventListener("input", () => {
-            const s = parseFloat(scaleRange.value);
-            model.scale.set(s, s, s);
-            scaleValue.textContent = s.toFixed(1) + "x";
-          });
         }
       });
     </script>
   </body>
 </html>
+
