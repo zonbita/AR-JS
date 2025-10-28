@@ -7,204 +7,296 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>AR Demo</title>
+
+    <!-- model-viewer -->
     <script
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
     ></script>
+
     <style>
+      :root {
+        --bg: #0b0c10;
+        --panel: rgba(255, 255, 255, 0.06);
+      }
+
       html,
       body {
         margin: 0;
         height: 100%;
-        background: #0b0c10;
+        background: var(--bg);
         color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial,
           sans-serif;
+        -webkit-font-smoothing: antialiased;
         overflow: hidden;
       }
+
       model-viewer {
         width: 100%;
         height: 100%;
+        background: var(--bg);
+        --progress-bar-color: #ffd700;
+        /* ẩn nút AR mặc định của model-viewer (chúng ta dùng nút tuỳ chỉnh) */
         --ar-button-display: none;
-        background: #0b0c10;
       }
+
+      /* Button group */
       .button-group {
         position: absolute;
         bottom: 30px;
         left: 50%;
-        transform: translateX(-50%) translateY(30px); /* bay lên từ dưới */
+        transform: translateX(-50%) translateY(30px);
         display: flex;
-        gap: 16px;
-        z-index: 10;
-
-        /* Ban đầu ẩn */
+        gap: 12px;
+        z-index: 30;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.8s ease, transform 0.8s ease;
+        transition: opacity 0.6s cubic-bezier(.2,.9,.2,1), transform 0.6s;
       }
+
       .button-group.show {
         opacity: 1;
         pointer-events: auto;
         transform: translateX(-50%) translateY(0);
       }
-      .button-group button {
-        flex: 1;
-        width: 160px;
-        padding: 14px 20px;
+
+      .button {
+        min-width: 140px;
+        padding: 12px 18px;
         border: none;
-        border-radius: 16px;
+        border-radius: 14px;
         font-weight: 600;
         font-size: 15px;
         cursor: pointer;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
-        will-change: transform, filter, box-shadow;
-        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(10px);
+        transition: transform 0.18s ease, filter 0.18s ease,
+          box-shadow 0.18s ease;
       }
-      .button-group button:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.1);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+
+      .button:active {
+        transform: scale(0.97);
       }
-      .button-group button:active {
-        transform: scale(0.95);
-      }
+
       .ar-btn {
         background: linear-gradient(135deg, #ffd700, #ff8c00);
-        color: #1a1a1a;
+        color: #111;
       }
+
       .link-btn {
         background: linear-gradient(135deg, #ff3b3b, #d81b60);
         color: #fff;
       }
+
       .btn-icon {
-        font-size: 20px;
+        font-size: 18px;
         transform: translateY(1px);
+      }
+
+      /* Small helper when AR not supported */
+      .note {
+        position: absolute;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 14px;
+        border-radius: 12px;
+        background: var(--panel);
+        font-size: 13px;
+        z-index: 40;
+        pointer-events: none;
+      }
+
+      /* make the custom AR button visually disabled when not available */
+      .disabled {
+        opacity: 0.45;
+        filter: grayscale(0.2);
+        pointer-events: none;
       }
     </style>
   </head>
+
   <body>
+    <!-- model-viewer element -->
     <model-viewer
       id="mv"
-      src="1M.glb"
-      ios-src="1M.usdz"
+      src="1M.glb"           <!-- thay bằng file glb của bạn -->
+      ios-src="1M.usdz"     <!-- thay bằng file usdz cho Quick Look -->
+      alt="BABY1M"
       ar
-      autoplay
       ar-modes="webxr quick-look"
       ar-scale="auto"
       ar-placement="floor"
-      alt="BABY1M"
-      scale="0.5 0.5 0.5"
       camera-controls
       interaction-prompt="none"
+      exposure="1"
+      shadow-intensity="1"
     >
     </model-viewer>
 
+    <!-- note: hiển thị thông tin AR support -->
+    <div class="note" id="note">Kiểm tra khả năng AR…</div>
+
+    <!-- nút tùy chỉnh -->
     <div class="button-group" id="btnGroup">
-      <button class="ar-btn" id="customAR">
-        <span class="btn-icon">🕶️</span> Xem AR
+      <button class="button ar-btn" id="customAR">
+        <span class="btn-icon">🕶️</span>
+        <span id="arLabel">Xem AR</span>
       </button>
+
       <button
-        class="link-btn"
+        class="button link-btn"
+        id="visitBtn"
         onclick="window.open('https://store.epicgames.com/vi', '_blank')"
       >
         <span class="btn-icon">▶️</span> Ghé Thăm
       </button>
     </div>
 
+    <!-- background music -->
     <audio id="bgm" src="music/Sound-InPlace.MP3" preload="auto" loop></audio>
 
     <script>
+      // Elements
       const mv = document.getElementById("mv");
       const customAR = document.getElementById("customAR");
-      const bgm = document.getElementById("bgm");
+      const arLabel = document.getElementById("arLabel");
+      const note = document.getElementById("note");
       const btnGroup = document.getElementById("btnGroup");
+      const bgm = document.getElementById("bgm");
+
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const prefersReducedMotion = window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      // Nút kích hoạt AR
-      customAR.addEventListener("click", async (event) => {
-        event.preventDefault();
-        try {
-          await mv.activateAR();
-        } catch (err) {
-          console.log("Kích hoạt AR thất bại:", err);
+      // Show buttons after model loads (or quickly if load is slow)
+      let showButtonsTimer = setTimeout(() => {
+        btnGroup.classList.add("show");
+      }, 1200);
+
+      // When model loads
+      mv.addEventListener("load", () => {
+        clearTimeout(showButtonsTimer);
+        // If model has animations, play first
+        const animations = mv.availableAnimations;
+        if (animations && animations.length > 0 && !prefersReducedMotion) {
+          mv.animationName = animations[0];
+          try { mv.play(); } catch (e) { /* ignore */ }
         }
+        // show buttons
+        btnGroup.classList.add("show");
       });
 
-      renderer.domElement.addEventListener("touchmove", (event) => {
-        const touch = event.touches[0];
-        const x = (touch.clientX / window.innerWidth) * 2 - 1;
-        const y = -(touch.clientY / window.innerHeight) * 2 + 1;
-
-        // Raycast từ màn hình vào AR scene
-        raycaster.setFromCamera({ x, y }, camera);
-        const intersects = raycaster.intersectObject(floorPlane);
-
-        if (intersects.length > 0) {
-          model.position.copy(intersects[0].point); // di chuyển model tới chỗ chạm
+      // Detect AR capability using model-viewer API where possible.
+      // model-viewer emits "ar-status" events; to detect capability we can try:
+      function updateARSupportUI(supported) {
+        if (supported) {
+          note.textContent = "Thiết bị hỗ trợ AR — bấm 'Xem AR' để bắt đầu.";
+          customAR.classList.remove("disabled");
+        } else {
+          note.textContent = "AR không khả dụng trên thiết bị hoặc trình duyệt này.";
+          // but we still keep the button visible (disabled)
+          customAR.classList.add("disabled");
         }
-      });
-
-      // Xử lý iOS
-      if (isIOS) {
-        customAR.addEventListener("click", () => {
-          if (bgm.paused) {
-            bgm.currentTime = 0;
-            bgm
-              .play()
-              .catch((err) =>
-                console.log("Không phát được nhạc trên iOS:", err)
-              );
-          }
-        });
-
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") {
-            bgm.pause();
-            bgm.currentTime = 0;
-          }
-        });
-      } else {
-        // Android & WebXR
-        mv.addEventListener("ar-status", (event) => {
-          if (event.detail.status === "session-started") {
-            bgm.currentTime = 0;
-            bgm
-              .play()
-              .catch((err) => console.log("Không phát được nhạc:", err));
-          } else if (event.detail.status === "not-presenting") {
-            bgm.pause();
-            bgm.currentTime = 0;
-          }
-        });
       }
 
-      window.addEventListener("pagehide", () => {
-        bgm.pause();
-        bgm.currentTime = 0;
-      });
+      // Many browsers can't tell sync; assume supported, then verify when trying to activate.
+      // For a better UX: if iOS, Quick Look is typically available when ios-src provided.
+      if (isIOS) {
+        // Quick Look usually available on iOS with ios-src
+        updateARSupportUI(true);
+      } else {
+        // For other devices assume WebXR may be available; we keep it enabled and handle errors on activation
+        updateARSupportUI(true);
+      }
 
-      mv.addEventListener("load", () => {
-        const animations = mv.availableAnimations;
-        if (animations && animations.length > 0) {
-          mv.animationName = animations[0];
-          mv.play();
+      // AR button click -> attempt to activate AR using model-viewer's API
+      customAR.addEventListener("click", async (event) => {
+        event.preventDefault();
+        // If visually disabled, do nothing
+        if (customAR.classList.contains("disabled")) return;
+        try {
+          // Try to play background music on user gesture (some browsers allow)
+          try {
+            if (bgm.paused) {
+              await bgm.play();
+            }
+          } catch (err) {
+            // ignore play errors
+            console.log("Không thể phát nhạc tự động:", err);
+          }
+
+          // activate AR session (model-viewer API)
+          // If browser can't start AR, it will throw — we catch and show message
+          await mv.activateAR();
+        } catch (err) {
+          console.warn("Kích hoạt AR thất bại:", err);
+          // show fallback note
+          note.textContent =
+            "Không thể khởi chạy AR: " +
+            (err && err.message ? err.message : "Không rõ lỗi") +
+            ". Hãy thử trình duyệt khác hoặc bật WebXR/Quick Look.";
+          // optionally visually disable to prevent repeated attempts
+          customAR.classList.add("disabled");
         }
       });
 
+      // model-viewer emits ar-status; we use it to pause/resume bgm
+      mv.addEventListener("ar-status", (e) => {
+        const status = e.detail && e.detail.status;
+        if (status === "session-started") {
+          console.log("AR session started");
+          // attempt to play music if paused
+          try {
+            if (bgm.paused) bgm.play().catch(() => {});
+          } catch (err) {}
+        } else if (status === "not-presenting") {
+          console.log("AR session ended or not presenting");
+          try {
+            bgm.pause();
+            bgm.currentTime = 0;
+          } catch (err) {}
+        }
+      });
+
+      // page hide -> pause music
+      window.addEventListener("pagehide", () => {
+        try {
+          bgm.pause();
+          bgm.currentTime = 0;
+        } catch (e) {}
+      });
+
+      // If iOS, some tighter restrictions on autoplay -> only play on user gesture (we already try on click)
+      if (isIOS) {
+        // ensure bgm doesn't try to auto-play
+        bgm.pause();
+        bgm.currentTime = 0;
+      }
+
+      // Accessibility: if animation finishes, we ensure buttons visible
       mv.addEventListener("finished", () => {
         btnGroup.classList.add("show");
-        mv.pause();
+      });
 
-        setTimeout(() => {
-          btnGroup.classList.add("show");
-        }, 10000);
+      // Dev helper: log model-viewer readiness
+      mv.addEventListener("error", (ev) => {
+        console.error("model-viewer lỗi:", ev);
+        note.textContent = "Lỗi khi tải mô hình. Kiểm tra console.";
+      });
+
+      // Optional: if user wants to open store link with keyboard
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          // hide buttons as a quick UX control
+          btnGroup.classList.toggle("show");
+        }
       });
     </script>
   </body>
 </html>
-
