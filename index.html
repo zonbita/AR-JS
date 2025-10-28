@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>UI 3D trước màn hình</title>
+    <title>3D UI Autoplay Animation</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
       body, html {
@@ -11,7 +11,8 @@
         overflow: hidden;
         background: #000;
       }
-      /* Video camera làm nền */
+
+      /* Camera background */
       video#camera {
         position: fixed;
         top: 0;
@@ -21,7 +22,8 @@
         object-fit: cover;
         z-index: 0;
       }
-      /* Mô hình 3D luôn dính giữa màn hình */
+
+      /* 3D model always in front of screen */
       model-viewer {
         position: fixed;
         top: 50%;
@@ -34,35 +36,44 @@
       }
     </style>
   </head>
+
   <body>
-    <!-- Camera nền -->
+    <!-- Camera background -->
     <video id="camera" autoplay muted playsinline></video>
 
-    <!-- Object 3D luôn dính trước màn hình -->
+    <!-- 3D model always on screen -->
     <model-viewer
       id="obj"
       src="embe5.glb"
       ios-src="embe5.usdz"
-      auto-rotate
       camera-controls
+      auto-rotate
+      autoplay
       interaction-prompt="none"
       shadow-intensity="1"
       exposure="1"
     ></model-viewer>
 
     <script>
-      // Lấy camera thực để làm nền
+      // Use real camera for background
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
         .then((stream) => {
           document.getElementById("camera").srcObject = stream;
-        });
+        })
+        .catch((err) => console.error("Camera access error:", err));
+
+      const mv = document.getElementById("obj");
+
+      // Ensure animation starts automatically after loading
+      mv.addEventListener("load", () => {
+        if (mv.availableAnimations && mv.availableAnimations.length > 0) {
+          // Play the first animation automatically
+          mv.play({ animationName: mv.availableAnimations[0] });
+        } else {
+          console.warn("No animation found in model.");
+        }
+      });
     </script>
   </body>
 </html>
-
-
-
-
-
-
