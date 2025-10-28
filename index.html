@@ -93,6 +93,14 @@
         if (mv.availableAnimations?.length > 0) {
           mv.play({ animationName: mv.availableAnimations[0] });
         }
+                // Handle background music for iOS
+        if (isIOS && bgm.paused) {
+          bgm.currentTime = 0;
+          bgm
+            .play()
+            .catch((err) => console.log("Không phát được nhạc trên iOS:", err));
+        }
+        
       });
 
       // Phát nhạc autoplay (Android/PC chắc chắn OK, iOS có thể bị muted ban đầu)
@@ -122,3 +130,4 @@
     </script>
   </body>
 </html>
+
