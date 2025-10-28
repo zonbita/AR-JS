@@ -2,485 +2,81 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <title>AR Demo - Auto Center</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AR Always Follow Camera</title>
     <script
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
     ></script>
     <style>
-      html,
       body {
         margin: 0;
-        height: 100%;
-        background: #0b0c10;
-        color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
-          sans-serif;
-        overflow: hidden;
+        background: #000;
       }
-
       model-viewer {
-        width: 100%;
-        height: 100%;
-        --ar-button-display: none;
-        background: #0b0c10;
-      }
-
-      /* Hotspot styling - these will appear ONLY in AR for Android */
-      .hotspot {
-        background: linear-gradient(135deg, #ff3b3b, #d81b60);
-        border-radius: 20px;
-        border: 3px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 4px 16px rgba(255, 59, 59, 0.4);
-        color: white;
-        font-size: 14px;
-        font-weight: bold;
-        padding: 12px 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        min-width: 120px;
-        text-align: center;
-
-        /* Hide in web view, only show in AR */
-        display: none !important;
-      }
-
-      /* Show hotspots only when in AR mode */
-      model-viewer[ar-status="session-started"] .hotspot {
-        display: block !important;
-      }
-
-      .hotspot:hover {
-        background: linear-gradient(135deg, #ff5555, #e91e63);
-        transform: scale(1.1);
-        box-shadow: 0 6px 20px rgba(255, 59, 59, 0.6);
-      }
-
-      .action-hotspot {
-        background: linear-gradient(135deg, #ffd700, #ff8c00);
-        color: #1a1a1a;
-        animation: pulse 2s infinite;
-      }
-
-      .action-hotspot:hover {
-        background: linear-gradient(135deg, #ffed4e, #ffa500);
-      }
-
-      @keyframes pulse {
-        0%,
-        100% {
-          transform: scale(1);
-          box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
-        }
-        50% {
-          transform: scale(1.05);
-          box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-        }
-      }
-
-      .button-group {
-        position: absolute;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%) translateY(30px);
-        display: flex;
-        gap: 16px;
-        z-index: 10;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.8s ease, transform 0.8s ease;
-      }
-
-      .button-group.show {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateX(-50%) translateY(0);
-      }
-
-      .button-group button {
-        flex: 1;
-        width: 160px;
-        padding: 14px 20px;
-        border: none;
-        border-radius: 16px;
-        font-weight: 600;
-        font-size: 15px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
-        will-change: transform, filter, box-shadow;
-        backdrop-filter: blur(12px);
-      }
-
-      .button-group button:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.1);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
-      }
-
-      .button-group button:active {
-        transform: scale(0.95);
-      }
-
-      .ar-btn {
-        background: linear-gradient(135deg, #ffd700, #ff8c00);
-        color: #1a1a1a;
-      }
-
-      .link-btn {
-        background: linear-gradient(135deg, #ff3b3b, #d81b60);
-        color: #fff;
-      }
-
-      .btn-icon {
-        font-size: 20px;
-        transform: translateY(1px);
-      }
-
-      /* AR Info overlay */
-      .ar-info {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 15px;
-        border-radius: 12px;
-        font-size: 14px;
-        backdrop-filter: blur(10px);
-        z-index: 100;
-        display: none;
-      }
-
-      .ar-info.show {
-        display: block;
+        width: 100vw;
+        height: 100vh;
       }
     </style>
   </head>
   <body>
-    <div class="ar-info" id="arInfo">
-      <strong>🎯 AR Mode Active!</strong><br />
-      <span id="arInfoText">Tap on the glowing hotspots around the model to interact with them.</span>
-    </div>
-
     <model-viewer
       id="mv"
-      src="1M.glb"
-      ios-src="1M.usdz"
+      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
       ar
-      ar-modes="webxr quick-look"
-      ar-scale="auto"
-      ar-placement="floor"
-      alt="BABY1M"
-      scale="0.5 0.5 0.5"
+      ar-modes="webxr scene-viewer quick-look"
       camera-controls
-      quickLook: {
-        title: "CUSTOM TITLE",
-        allowsContentScaling: false,
-        canonicalWebPageURL: "https://github.com/naver/egjs-view3d",
-        applePayButtonType: "subscribe",
-        callToAction: "CUSTOM BUTTON TEXT",
-        checkoutTitle: "CUSTOM TITLE TEXT",
-        checkoutSubtitle: "CUSTOM SUBTITLE TEXT",
-        price: "100$",
-        customHeight: "large"
-      }
-    >
-      <!-- Interactive hotspots for Android WebXR - hidden in web view -->
-      <button
-        class="hotspot action-hotspot"
-        slot="hotspot-1"
-        data-position="0.2m 0.15m 0m"
-        data-normal="1m 0m 0m"
-        onclick="handleHotspotClick('action')"
-      >
-        🎮 Play Game
-      </button>
+      auto-rotate
+      exposure="1"
+      shadow-intensity="1"
+      alt="AR Follow Camera"
+    ></model-viewer>
 
-      <button
-        class="hotspot"
-        slot="hotspot-2"
-        data-position="-0.2m 0.15m 0m"
-        data-normal="-1m 0m 0m"
-        onclick="handleHotspotClick('info')"
-      >
-        ℹ️ Info
-      </button>
-
-      <button
-        class="hotspot"
-        slot="hotspot-3"
-        data-position="0m 0.2m 0m"
-        data-normal="0m 1m 0m"
-        onclick="handleHotspotClick('share')"
-      >
-        📱 Share
-      </button>
-    </model-viewer>
-
-    <div class="button-group" id="btnGroup">
-      <button class="ar-btn" id="customAR">
-        <span class="btn-icon">🕶️</span> Xem AR
-      </button>
-      <button
-        class="link-btn"
-        onclick="window.open('https://store.epicgames.com/vi', '_blank')"
-      >
-        <span class="btn-icon">▶️</span> Ghé Thăm
-      </button>
-    </div>
-
-    <audio id="bgm" src="music/Sound-InPlace.MP3" preload="auto" loop></audio>
-
-    <script>
+    <script type="module">
       const mv = document.getElementById("mv");
-      const customAR = document.getElementById("customAR");
-      const bgm = document.getElementById("bgm");
-      const btnGroup = document.getElementById("btnGroup");
-      const arInfo = document.getElementById("arInfo");
-      const arInfoText = document.getElementById("arInfoText");
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-      // Hotspot handlers
-      window.handleHotspotClick = function (action) {
-        switch (action) {
-          case "action":
-            window.open("https://store.epicgames.com/vi", "_blank");
-            break;
-          case "info":
-            alert(
-              "BABY1M Model Information\n\nThis is a premium 3D model demonstration with AR capabilities.\n\nFeatures:\n• Interactive AR experience\n• Cross-platform compatibility\n• High-quality 3D rendering"
-            );
-            break;
-          case "share":
-            if (navigator.share) {
-              navigator.share({
-                title: "Check out this AR experience!",
-                text: "Amazing BABY1M 3D model in AR!",
-                url: window.location.href,
-              });
-            } else {
-              navigator.clipboard.writeText(window.location.href);
-              alert("Link copied to clipboard!");
-            }
-            break;
-        }
-      };
+      // Khi vào AR
+      mv.addEventListener("ar-status", (e) => {
+        if (e.detail.status === "session-started") {
+          console.log("🟢 AR started — follow camera activated");
 
-      // AR button
-      customAR.addEventListener("click", async (event) => {
-        event.preventDefault();
-        try {
-          await mv.activateAR();
-        } catch (err) {
-          console.log("Kích hoạt AR thất bại:", err);
-          // Fallback for iOS Quick Look (if you add an <a rel="ar"> link with id="ar-link")
-          const arLink = document.getElementById("ar-link");
-          if (isIOS && arLink) {
-            arLink.click();
+          // Lấy WebXR session
+          const session = mv.xrSession;
+          const viewerRefSpace = mv.xrReferenceSpace;
+
+          if (session && viewerRefSpace) {
+            const onXRFrame = (time, frame) => {
+              const pose = frame.getViewerPose(viewerRefSpace);
+              if (pose) {
+                // Vị trí camera
+                const camPos = pose.transform.position;
+                const camOrient = pose.transform.orientation;
+
+                // Đặt model trước mặt camera 1 mét
+                const distance = 1.0;
+                const dir = new THREE.Vector3(0, 0, -distance);
+                const quat = new THREE.Quaternion(
+                  camOrient.x,
+                  camOrient.y,
+                  camOrient.z,
+                  camOrient.w
+                );
+                dir.applyQuaternion(quat);
+                const targetPos = {
+                  x: camPos.x + dir.x,
+                  y: camPos.y + dir.y,
+                  z: camPos.z + dir.z,
+                };
+
+                mv.position = `${targetPos.x} ${targetPos.y} ${targetPos.z}`;
+              }
+
+              session.requestAnimationFrame(onXRFrame);
+            };
+
+            session.requestAnimationFrame(onXRFrame);
           }
         }
-
-        if (isIOS && bgm.paused) {
-          bgm.currentTime = 0;
-          bgm.play().catch((err) => console.log("Không phát được nhạc trên iOS:", err));
-        }
-      });
-
-      // AR status handling
-      mv.addEventListener("ar-status", (event) => {
-        if (event.detail.status === "session-started") {
-          bgm.currentTime = 0;
-          bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
-          arInfo.classList.add("show");
-          mv.setAttribute("ar-status", "session-started");
-
-          if (isIOS) {
-            arInfoText.textContent =
-              "Look for the banner button in AR Quick Look to interact!";
-          } else {
-            arInfoText.textContent =
-              "Tap on the glowing hotspots around the model to interact with them.";
-          }
-
-          setTimeout(() => {
-            arInfo.classList.remove("show");
-          }, 5000);
-        } else if (event.detail.status === "not-presenting") {
-          bgm.pause();
-          bgm.currentTime = 0;
-          arInfo.classList.remove("show");
-          mv.removeAttribute("ar-status");
-        }
-      });
-
-      // Play animation and show buttons
-      mv.addEventListener("load", () => {
-        const animations = mv.availableAnimations;
-        if (animations && animations.length > 0) {
-          mv.animationName = animations[0];
-          mv.animationLoop = false;
-          mv.play();
-
-          const lockAtEnd = () => {
-            const duration = mv.duration;
-            const currentTime = mv.currentTime;
-            if (duration && currentTime >= duration - 0.1) {
-              mv.timeScale = 0.0;
-              btnGroup.classList.add("show");
-            } else {
-              requestAnimationFrame(lockAtEnd);
-            }
-          };
-          requestAnimationFrame(lockAtEnd);
-        } else {
-          setTimeout(() => btnGroup.classList.add("show"), 1000);
-        }
-      });
-
-      mv.addEventListener("error", (event) => {
-        console.error("Model loading error:", event);
-        setTimeout(() => btnGroup.classList.add("show"), 2000);
-      });
-
-      // === FAKE TOUCH / POINTER MOVE to keep model centered in AR (Android / WebXR) ===
-      let fakeTouchInterval = null;
-
-      function createTouchLike(clientX, clientY) {
-        // Try real Touch constructor if available
-        try {
-          if (typeof Touch === "function") {
-            return new Touch({
-              identifier: Date.now() % 100000,
-              target: mv,
-              clientX,
-              clientY,
-              radiusX: 1,
-              radiusY: 1,
-              rotationAngle: 0,
-              force: 0.5,
-            });
-          }
-        } catch (e) {
-          // ignored
-        }
-        // Fallback: return a plain object shaped like a Touch
-        return {
-          identifier: Date.now() % 100000,
-          target: mv,
-          clientX,
-          clientY,
-          pageX: clientX,
-          pageY: clientY,
-          screenX: clientX,
-          screenY: clientY,
-        };
-      }
-
-      function dispatchFakeTouch(clientX, clientY) {
-        // First try TouchEvent
-        try {
-          const t = createTouchLike(clientX, clientY);
-          const ev = new TouchEvent("touchmove", {
-            cancelable: true,
-            bubbles: true,
-            touches: [t],
-            targetTouches: [t],
-            changedTouches: [t],
-          });
-          mv.dispatchEvent(ev);
-          return true;
-        } catch (e) {
-          // TouchEvent constructor might be blocked — fall through to pointer
-        }
-
-        // Fallback: dispatch pointermove (more widely supported for synthetic events)
-        try {
-          const ev = new PointerEvent("pointermove", {
-            bubbles: true,
-            cancelable: true,
-            pointerId: Date.now() % 100000,
-            clientX,
-            clientY,
-            pointerType: "touch",
-            isPrimary: true,
-          });
-          mv.dispatchEvent(ev);
-          return true;
-        } catch (e) {
-          // last resort: dispatch a custom event with coordinates in detail
-          const ce = new CustomEvent("fake-touchmove", {
-            bubbles: true,
-            cancelable: true,
-            detail: { clientX, clientY },
-          });
-          mv.dispatchEvent(ce);
-          return false;
-        }
-      }
-
-      function triggerFakeTouchMove() {
-        const centerX = Math.floor(window.innerWidth / 2);
-        const centerY = Math.floor(window.innerHeight / 2);
-        // small jitter to look like natural micro-movements
-        const jitterX = centerX + (Math.random() * 4 - 2);
-        const jitterY = centerY + (Math.random() * 4 - 2);
-        dispatchFakeTouch(jitterX, jitterY);
-      }
-
-      // Start/stop fake touch when AR session starts/stops
-      mv.addEventListener("ar-status", (event) => {
-        if (event.detail.status === "session-started") {
-          if (!fakeTouchInterval) {
-            // run ~ every 80ms — adjust if too aggressive or too slow
-            fakeTouchInterval = setInterval(triggerFakeTouchMove, 80);
-            console.log("🔹 Fake touchmove started to keep model centered.");
-          }
-        } else if (event.detail.status === "not-presenting") {
-          if (fakeTouchInterval) {
-            clearInterval(fakeTouchInterval);
-            fakeTouchInterval = null;
-            console.log("🔹 Fake touchmove stopped.");
-          }
-        }
-      });
-
-      // Also stop when page hidden/unloaded
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState !== "visible") {
-          if (fakeTouchInterval) {
-            clearInterval(fakeTouchInterval);
-            fakeTouchInterval = null;
-          }
-          bgm.pause();
-          bgm.currentTime = 0;
-        }
-      });
-
-      window.addEventListener("pagehide", () => {
-        if (fakeTouchInterval) {
-          clearInterval(fakeTouchInterval);
-          fakeTouchInterval = null;
-        }
-        bgm.pause();
-        bgm.currentTime = 0;
-      });
-
-      // Optional: listen to custom fallback event (if pointer/touch constructors blocked)
-      mv.addEventListener("fake-touchmove", (ev) => {
-        // Some custom logic could go here if you need to integrate with model-viewer events
-        // For now, it's only a fallback signal. Leave empty or use for debugging.
-        // console.log("Received fake-touchmove fallback:", ev.detail);
       });
     </script>
   </body>
