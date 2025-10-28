@@ -2,7 +2,7 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>3D UI Autoplay Animation</title>
     <script
       type="module"
@@ -10,17 +10,17 @@
     ></script>
 
     <style>
-      html,
-      body {
+      /* Reset toàn bộ margin, padding, overflow */
+      html, body {
         margin: 0;
         padding: 0;
         width: 100%;
         height: 100%;
-        overflow: hidden;
+        overflow: hidden !important;
         background: #000;
       }
 
-      /* Camera background */
+      /* Camera nền */
       video#camera {
         position: fixed;
         inset: 0;
@@ -28,16 +28,19 @@
         height: 100%;
         object-fit: cover;
         z-index: 0;
+        border: none;
+        outline: none;
       }
 
-      /* Model fills full screen */
+      /* 3D model full màn hình */
       model-viewer {
         position: fixed;
         inset: 0;
-        width: 50%;
-        height: 50%;
+        width: 100%;
+        height: 100%;
         background: transparent;
-        object-fit: contain;
+        border: none;
+        outline: none;
         z-index: 1;
       }
     </style>
@@ -47,7 +50,7 @@
     <!-- Camera background -->
     <video id="camera" autoplay muted playsinline></video>
 
-    <!-- 3D model always fills screen -->
+    <!-- 3D model -->
     <model-viewer
       id="obj"
       src="embe5.glb"
@@ -55,14 +58,14 @@
       camera-controls
       auto-rotate
       autoplay
-      touch-action="pan-y"
+      touch-action="none"
       interaction-prompt="none"
       shadow-intensity="1"
       exposure="1"
     ></model-viewer>
 
     <script>
-      // Use rear camera as live background
+      // Kích hoạt camera thật làm nền
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
         .then((stream) => {
@@ -72,7 +75,7 @@
 
       const mv = document.getElementById("obj");
 
-      // Autoplay first animation when model is ready
+      // Tự động phát animation sau khi model load
       mv.addEventListener("load", () => {
         if (mv.availableAnimations && mv.availableAnimations.length > 0) {
           mv.play({ animationName: mv.availableAnimations[0] });
@@ -80,7 +83,12 @@
           console.warn("No animation found in model.");
         }
       });
+
+      // Đảm bảo khi resize màn hình, model vẫn fit
+      window.addEventListener("resize", () => {
+        mv.style.width = `${window.innerWidth}px`;
+        mv.style.height = `${window.innerHeight}px`;
+      });
     </script>
   </body>
 </html>
-
