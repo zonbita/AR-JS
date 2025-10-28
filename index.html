@@ -3,258 +3,61 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AR Always On Screen</title>
+    <title>UI 3D trước màn hình</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
-      model-viewer {
-        width: 100%;
-        height: 100vh;
+      body, html {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
       }
-      button {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 10;
+      /* Video camera làm nền */
+      video#camera {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        z-index: 0;
+      }
+      /* Mô hình 3D luôn dính giữa màn hình */
+      model-viewer {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 200px;
+        height: 200px;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+        background: transparent;
+        pointer-events: none;
       }
     </style>
   </head>
   <body>
+    <!-- Camera nền -->
+    <video id="camera" autoplay muted playsinline></video>
+
+    <!-- Object 3D luôn dính trước màn hình -->
     <model-viewer
-      id="ar-model"
+      id="obj"
       src="abc.glb"
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-      camera-controls
       auto-rotate
-      exposure="1"
+      disable-zoom
+      camera-controls
+      interaction-prompt="none"
       shadow-intensity="1"
-      style="background-color: transparent;"
+      exposure="1"
     ></model-viewer>
 
-    <button id="startAR">Vào AR</button>
-
     <script>
-      const modelViewer = document.getElementById("ar-model");
-      const btn = document.getElementById("startAR");
-
-      btn.addEventListener("click", () => modelViewer.activateAR());
-
-      // Luôn giữ mô hình trước mặt camera trong AR
-      modelViewer.addEventListener("arframe", () => {
-        const camera = modelViewer.getCameraTransform();
-        // Lấy vị trí camera
-        const pos = camera.position;
-        const dir = camera.forward;
-
-        // Đặt object cách camera 1m phía trước
-        const distance = 1.0;
-        const target = {
-          x: pos.x + dir.x * distance,
-          y: pos.y + dir.y * distance,
-          z: pos.z + dir.z * distance,
-        };
-
-        modelViewer.positionAndNormalToMatrix(
-          target,
-          { x: 0, y: 1, z: 0 },
-          modelViewer.scene.model.matrix
-        );
-      });
+      // Lấy camera thực để làm nền
+      navigator.mediaDevices
+        .getUserMedia({ video: { facingMode: "environment" } })
+        .then((stream) => {
+          document.getElementById("camera").srcObject = stream;
+        });
     </script>
   </body>
 </html>
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AR: Keep Object Always in View</title>
-  <style>
-    body { margin: 0; font-family: sans-serif; overflow: hidden; }
-    #overlay {
-      position: absolute;
-      left: 10px;
-      top: 10px;
-      z-index: 2;
-      background: rgba(0,0,0,0.4);
-      color: #fff;
-      padding: 8px 10px;
-      border-radius: 6px;
-      backdrop-filter: blur(4px);
-    }
-    #distanceControl {
-      width: 160px;
-    }
-    /* ARButton is injected by Three.js; make sure it's visible */
-    .ar-button {
-      position: absolute;
-      right: 10px;
-      bottom: 10px;
-      z-index: 2;
-    }
-  </style>
-</head>
-<body>
-  <div id="overlay">
-    <div>Pin to camera (HUD): <input id="pinToggle" type="checkbox" checked></div>
-    <div style="margin-top:8px">
-      Distance (m): <input id="distanceControl" type="range" min="0.2" max="3" step="0.1" value="0.5">
-      <span id="distVal">0.5</span> m
-    </div>
-    <div style="margin-top:8px; font-size:12px; opacity:0.9;">
-      Tips: Use HTTPS and Android Chrome with WebXR/ARCore. Tap the AR button to start.
-    </div>
-  </div>
-
-  <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
-    import { GLTFLoader } from 'https://unpkg.com/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
-    import { ARButton } from 'https://unpkg.com/three@0.158.0/examples/jsm/webxr/ARButton.js';
-
-    let camera, scene, renderer;
-    let reticle = null;
-    let model = null;
-    let controller = null;
-    let pinToCamera = true;
-    let distanceFromCamera = 0.5; // meters
-
-    const MODEL_URL = 'model.glb'; // <-- Thay đường dẫn GLB của bạn ở đây
-
-    init();
-    animate();
-
-    function init() {
-      const container = document.createElement('div');
-      document.body.appendChild(container);
-
-      scene = new THREE.Scene();
-
-      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true;
-      container.appendChild(renderer.domElement);
-
-      // Light
-      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-      scene.add(light);
-
-      // Load model (GLTF/GLB)
-      const loader = new GLTFLoader();
-      loader.load(MODEL_URL, (gltf) => {
-        model = gltf.scene;
-        // scale model if needed
-        model.scale.setScalar(0.6);
-        // invisible at first; we'll add it when session starts
-        model.visible = false;
-        scene.add(model);
-      }, undefined, (err) => {
-        console.error('Error loading model:', err);
-      });
-
-      // XR AR button
-      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['local-floor'] }));
-
-      // Controller for XR frames
-      controller = renderer.xr.getController(0);
-      scene.add(controller);
-
-      // Optional: reticle if you want to place on surfaces (not necessary for pin-to-camera)
-      const geometry = new THREE.RingGeometry(0.07, 0.09, 32).rotateX(- Math.PI / 2);
-      const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-      reticle = new THREE.Mesh(geometry, material);
-      reticle.matrixAutoUpdate = false;
-      reticle.visible = false;
-      scene.add(reticle);
-
-      // Handle window resize
-      window.addEventListener('resize', onWindowResize);
-
-      // UI controls
-      const pinToggle = document.getElementById('pinToggle');
-      pinToggle.addEventListener('change', (e) => {
-        pinToCamera = e.target.checked;
-      });
-
-      const distControl = document.getElementById('distanceControl');
-      const distVal = document.getElementById('distVal');
-      distControl.addEventListener('input', (e) => {
-        distanceFromCamera = parseFloat(e.target.value);
-        distVal.textContent = distanceFromCamera.toFixed(1);
-      });
-
-      // When XR session starts / ends
-      renderer.xr.addEventListener('sessionstart', () => {
-        console.log('XR session started');
-        if (model) model.visible = true;
-      });
-      renderer.xr.addEventListener('sessionend', () => {
-        console.log('XR session ended');
-        if (model) model.visible = false;
-      });
-    }
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    // Main render loop
-    function animate() {
-      renderer.setAnimationLoop(render);
-    }
-
-    function render(timestamp, frame) {
-      // If AR session active and model loaded
-      if (renderer.xr.isPresenting && model) {
-        // Get the XR camera (three.js updates it for us)
-        const xrCamera = renderer.xr.getCamera(camera);
-
-        // We want the "physical" camera pose: xrCamera is a Group containing children for each eye.
-        // Use xrCamera.getWorldPosition and getWorldDirection to compute forward vector.
-        const camWorldPos = new THREE.Vector3();
-        xrCamera.getWorldPosition(camWorldPos);
-
-        const camWorldDir = new THREE.Vector3(0, 0, -1);
-        // getWorldDirection returns a normalized vector
-        xrCamera.getWorldDirection(camWorldDir);
-
-        if (pinToCamera) {
-          // Place model a fixed distance in front of camera
-          const targetPos = camWorldPos.clone().add(camWorldDir.multiplyScalar(distanceFromCamera));
-          // Smooth interpolation to reduce jitter
-          model.position.lerp(targetPos, 0.35);
-
-          // Make model face the camera (so it looks like HUD)
-          // Option A: copy camera quaternion so model matches orientation of camera
-          const camQuat = new THREE.Quaternion();
-          xrCamera.getWorldQuaternion(camQuat);
-          // If you want model to face camera (billboard), invert quaternion's rotation on Y/Z as needed or set lookAt
-          // Here we copy camera orientation so model is fixed relative to screen
-          model.quaternion.slerp(camQuat, 0.35);
-
-        } else {
-          // If not pin-to-camera, you may want to allow placing on surfaces.
-          // Simple example: make model sit where the reticle is (if visible)
-          if (reticle.visible) {
-            const mat = new THREE.Matrix4();
-            mat.fromArray(reticle.matrix.elements);
-            const pos = new THREE.Vector3();
-            pos.setFromMatrixPosition(mat);
-            model.position.lerp(pos, 0.4);
-            // optional: align model with reticle rotation
-            const quat = new THREE.Quaternion().setFromRotationMatrix(mat);
-            model.quaternion.slerp(quat, 0.4);
-          }
-        }
-      }
-
-      renderer.render(scene, camera);
-    }
-  </script>
-</body>
-</html>
-
