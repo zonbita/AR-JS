@@ -4,10 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>3D UI Autoplay Animation</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script
+      type="module"
+      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
+    ></script>
+
     <style>
-      body, html {
+      html,
+      body {
         margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
         background: #000;
       }
@@ -15,24 +23,22 @@
       /* Camera background */
       video#camera {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
         z-index: 0;
       }
 
-      /* 3D model always in front of screen */
+      /* Model fills full screen */
       model-viewer {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        width: 100vw;
-        height: 100vh;
-        transform: translate(-50%, -50%);
-        z-index: 1;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         background: transparent;
+        object-fit: contain;
+        z-index: 1;
       }
     </style>
   </head>
@@ -41,7 +47,7 @@
     <!-- Camera background -->
     <video id="camera" autoplay muted playsinline></video>
 
-    <!-- 3D model always on screen -->
+    <!-- 3D model always fills screen -->
     <model-viewer
       id="obj"
       src="embe5.glb"
@@ -56,7 +62,7 @@
     ></model-viewer>
 
     <script>
-      // Use real camera for background
+      // Use rear camera as live background
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
         .then((stream) => {
@@ -66,10 +72,9 @@
 
       const mv = document.getElementById("obj");
 
-      // Ensure animation starts automatically after loading
+      // Autoplay first animation when model is ready
       mv.addEventListener("load", () => {
         if (mv.availableAnimations && mv.availableAnimations.length > 0) {
-          // Play the first animation automatically
           mv.play({ animationName: mv.availableAnimations[0] });
         } else {
           console.warn("No animation found in model.");
@@ -78,10 +83,3 @@
     </script>
   </body>
 </html>
-
-
-
-
-
-
-
