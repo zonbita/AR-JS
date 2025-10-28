@@ -1,3 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Always On Screen</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+      model-viewer {
+        width: 100%;
+        height: 100vh;
+      }
+      button {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 10;
+      }
+    </style>
+  </head>
+  <body>
+    <model-viewer
+      id="ar-model"
+      src="abc.glb"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      auto-rotate
+      exposure="1"
+      shadow-intensity="1"
+      style="background-color: transparent;"
+    ></model-viewer>
+
+    <button id="startAR">Vào AR</button>
+
+    <script>
+      const modelViewer = document.getElementById("ar-model");
+      const btn = document.getElementById("startAR");
+
+      btn.addEventListener("click", () => modelViewer.activateAR());
+
+      // Luôn giữ mô hình trước mặt camera trong AR
+      modelViewer.addEventListener("arframe", () => {
+        const camera = modelViewer.getCameraTransform();
+        // Lấy vị trí camera
+        const pos = camera.position;
+        const dir = camera.forward;
+
+        // Đặt object cách camera 1m phía trước
+        const distance = 1.0;
+        const target = {
+          x: pos.x + dir.x * distance,
+          y: pos.y + dir.y * distance,
+          z: pos.z + dir.z * distance,
+        };
+
+        modelViewer.positionAndNormalToMatrix(
+          target,
+          { x: 0, y: 1, z: 0 },
+          modelViewer.scene.model.matrix
+        );
+      });
+    </script>
+  </body>
+</html>
 <!doctype html>
 <html lang="en">
 <head>
@@ -192,3 +257,4 @@
   </script>
 </body>
 </html>
+
