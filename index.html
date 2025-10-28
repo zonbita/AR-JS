@@ -6,13 +6,14 @@
     <title>3D UI Autoplay Animation</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
-      body, html {
+      html, body {
         margin: 0;
         overflow: hidden;
         background: #000;
+        height: 100%;
       }
 
-      /* Camera background */
+      /* Nền camera */
       video#camera {
         position: fixed;
         top: 0;
@@ -23,7 +24,7 @@
         z-index: 0;
       }
 
-      /* 3D model always in front of screen */
+      /* Model 3D nằm giữa màn hình */
       model-viewer {
         position: fixed;
         top: 50%;
@@ -34,14 +35,33 @@
         z-index: 1;
         background: transparent;
       }
+
+      /* Overlay yêu cầu bật tiếng */
+      #tapOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        font-size: 1.5em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        z-index: 10;
+        transition: opacity 0.6s ease;
+      }
+      #tapOverlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
     </style>
   </head>
 
   <body>
-    <!-- Camera background -->
+    <!-- Camera nền -->
     <video id="camera" autoplay muted playsinline></video>
 
-    <!-- 3D model always on screen -->
+    <!-- 3D model luôn ở giữa -->
     <model-viewer
       id="obj"
       src="embe5.glb"
@@ -54,44 +74,47 @@
       exposure="1"
       touch-action="pan-y"
     ></model-viewer>
+
+    <!-- Nhạc nền -->
     <audio id="bgm" src="voice_embe5.MP3" preload="auto" loop></audio>
+
+    <!-- Overlay “chạm để bật tiếng” -->
+    <div id="tapOverlay">🔊 Chạm để bật tiếng</div>
+
     <script>
+      const cameraVideo = document.getElementById("camera");
+      const mv = document.getElementById("obj");
       const bgm = document.getElementById("bgm");
-      // Use real camera for background
+      const tapOverlay = document.getElementById("tapOverlay");
+
+      // Bật camera môi trường (AR background)
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
-        .then((stream) => {
-          document.getElementById("camera").srcObject = stream;
-        })
-        .catch((err) => console.error("Camera access error:", err));
+        .then((stream) => (cameraVideo.srcObject = stream))
+        .catch((err) => console.error("Lỗi mở camera:", err));
 
-      const mv = document.getElementById("obj");
-
-      // Ensure animation starts automatically after loading
+      // Chạy animation sau khi model load
       mv.addEventListener("load", () => {
-        if (mv.availableAnimations && mv.availableAnimations.length > 0) {
-          // Play the first animation automatically
+        if (mv.availableAnimations?.length > 0) {
           mv.play({ animationName: mv.availableAnimations[0] });
-        } else {
-          console.warn("No animation found in model.");
         }
-
-                // Handle background music for iOS
-        if (isIOS && bgm.paused) {
-          bgm.currentTime = 0;
-          bgm
-            .play()
-            .catch((err) => console.log("Không phát được nhạc trên iOS:", err));
-        }
-        
       });
 
-      
+      // Thử autoplay nhạc (Android, PC)
+      bgm.play().then(() => {
+        tapOverlay.classList.add("hidden"); // Nếu autoplay được → ẩn overlay
+      }).catch(() => {
+        // Nếu bị chặn (iOS) → chờ user chạm để bật
+        console.log("Autoplay bị chặn, chờ người dùng tương tác.");
+        const enableAudio = () => {
+          bgm.play().catch(err => console.log("Không thể bật nhạc:", err));
+          tapOverlay.classList.add("hidden");
+          document.removeEventListener("touchstart", enableAudio);
+          document.removeEventListener("click", enableAudio);
+        };
+        document.addEventListener("touchstart", enableAudio);
+        document.addEventListener("click", enableAudio);
+      });
     </script>
   </body>
 </html>
-
-
-
-
-
