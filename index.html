@@ -56,6 +56,7 @@
     ></model-viewer>
     <audio id="bgm" src="voice_embe5.MP3" preload="auto" loop></audio>
     <script>
+      const bgm = document.getElementById("bgm");
       // Use real camera for background
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
@@ -74,10 +75,22 @@
         } else {
           console.warn("No animation found in model.");
         }
+
+                // Handle background music for iOS
+        if (isIOS && bgm.paused) {
+          bgm.currentTime = 0;
+          bgm
+            .play()
+            .catch((err) => console.log("Không phát được nhạc trên iOS:", err));
+        }
+        
       });
+
+      
     </script>
   </body>
 </html>
+
 
 
 
