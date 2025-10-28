@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>AR Demo - Fixed Object</title>
+    <title>AR Fixed Object</title>
 
     <script
       type="module"
@@ -31,56 +31,6 @@
         background: #0b0c10;
       }
 
-      /* Hotspot styling */
-      .hotspot {
-        background: linear-gradient(135deg, #ff3b3b, #d81b60);
-        border-radius: 20px;
-        border: 3px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 4px 16px rgba(255, 59, 59, 0.4);
-        color: white;
-        font-size: 14px;
-        font-weight: bold;
-        padding: 12px 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        min-width: 120px;
-        text-align: center;
-        display: none !important;
-      }
-
-      model-viewer[ar-status="session-started"] .hotspot {
-        display: block !important;
-      }
-
-      .hotspot:hover {
-        background: linear-gradient(135deg, #ff5555, #e91e63);
-        transform: scale(1.1);
-        box-shadow: 0 6px 20px rgba(255, 59, 59, 0.6);
-      }
-
-      .action-hotspot {
-        background: linear-gradient(135deg, #ffd700, #ff8c00);
-        color: #1a1a1a;
-        animation: pulse 2s infinite;
-      }
-
-      .action-hotspot:hover {
-        background: linear-gradient(135deg, #ffed4e, #ffa500);
-      }
-
-      @keyframes pulse {
-        0%,
-        100% {
-          transform: scale(1);
-          box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
-        }
-        50% {
-          transform: scale(1.05);
-          box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-        }
-      }
-
       .button-group {
         position: absolute;
         bottom: 30px;
@@ -100,51 +50,18 @@
         transform: translateX(-50%) translateY(0);
       }
 
-      .button-group button {
-        flex: 1;
-        width: 160px;
-        padding: 14px 20px;
-        border: none;
-        border-radius: 16px;
-        font-weight: 600;
-        font-size: 15px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
-        will-change: transform, filter, box-shadow;
-        backdrop-filter: blur(12px);
-      }
-
-      .button-group button:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.1);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
-      }
-
-      .button-group button:active {
-        transform: scale(0.95);
-      }
-
       .ar-btn {
         background: linear-gradient(135deg, #ffd700, #ff8c00);
         color: #1a1a1a;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
       }
 
-      .link-btn {
-        background: linear-gradient(135deg, #ff3b3b, #d81b60);
-        color: #fff;
-      }
-
-      .btn-icon {
-        font-size: 20px;
-        transform: translateY(1px);
-      }
-
-      /* AR Info overlay */
       .ar-info {
         position: absolute;
         top: 20px;
@@ -170,7 +87,7 @@
     <div class="ar-info" id="arInfo">
       <strong>🎯 AR Mode Active!</strong><br />
       <span id="arInfoText">
-        Tap on the glowing hotspots around the model to interact with them.
+        Object is fixed in front of your camera — move around, it stays in view.
       </span>
     </div>
 
@@ -181,148 +98,63 @@
       ar
       ar-modes="webxr quick-look"
       ar-scale="auto"
-      ar-placement="viewer"
       camera-controls
-      scale="0.5 0.5 0.5"
-      data-position="0 0 -0.5m"
-      alt="BABY1M"
+      autoplay
+      alt="Fixed AR Object"
+      style="width: 100%; height: 100%;"
     >
-      <!-- Hotspots -->
-      <button
-        class="hotspot action-hotspot"
-        slot="hotspot-1"
-        data-position="0.2m 0.15m 0m"
-        data-normal="1m 0m 0m"
-        onclick="handleHotspotClick('action')"
-      >
-        🎮 Play Game
-      </button>
-
-      <button
-        class="hotspot"
-        slot="hotspot-2"
-        data-position="-0.2m 0.15m 0m"
-        data-normal="-1m 0m 0m"
-        onclick="handleHotspotClick('info')"
-      >
-        ℹ️ Info
-      </button>
-
-      <button
-        class="hotspot"
-        slot="hotspot-3"
-        data-position="0m 0.2m 0m"
-        data-normal="0m 1m 0m"
-        onclick="handleHotspotClick('share')"
-      >
-        📱 Share
-      </button>
     </model-viewer>
 
-    <div class="button-group" id="btnGroup">
-      <button class="ar-btn" id="customAR">
-        <span class="btn-icon">🕶️</span> Xem AR
-      </button>
-      <button
-        class="link-btn"
-        onclick="window.open('https://store.epicgames.com/vi', '_blank')"
-      >
-        <span class="btn-icon">▶️</span> Ghé Thăm
-      </button>
+    <div class="button-group show">
+      <button class="ar-btn" id="customAR">🕶️ Xem AR</button>
     </div>
-
-    <audio id="bgm" src="music/Sound-InPlace.MP3" preload="auto" loop></audio>
 
     <script>
       const mv = document.getElementById("mv");
       const customAR = document.getElementById("customAR");
-      const bgm = document.getElementById("bgm");
-      const btnGroup = document.getElementById("btnGroup");
       const arInfo = document.getElementById("arInfo");
-      const arInfoText = document.getElementById("arInfoText");
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-      // Hotspot click handler
-      window.handleHotspotClick = function (action) {
-        console.log("Hotspot clicked:", action);
-        switch (action) {
-          case "action":
-            window.open("https://store.epicgames.com/vi", "_blank");
-            break;
-          case "info":
-            alert(
-              "BABY1M Model Information\n\nThis is a premium 3D model demonstration with AR capabilities.\n\nFeatures:\n• Interactive AR experience\n• Cross-platform compatibility\n• High-quality 3D rendering"
-            );
-            break;
-          case "share":
-            if (navigator.share) {
-              navigator.share({
-                title: "Check out this AR experience!",
-                text: "Amazing BABY1M 3D model in AR!",
-                url: window.location.href,
-              });
-            } else {
-              navigator.clipboard.writeText(window.location.href);
-              alert("Link copied to clipboard!");
-            }
-            break;
-        }
-      };
-
-      // Activate AR manually
-      customAR.addEventListener("click", async (event) => {
-        event.preventDefault();
+      // Khi người dùng bấm nút AR
+      customAR.addEventListener("click", async () => {
         try {
           await mv.activateAR();
         } catch (err) {
-          console.log("Kích hoạt AR thất bại:", err);
-        }
-
-        if (bgm.paused) {
-          bgm.currentTime = 0;
-          bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
+          console.log("Không thể kích hoạt AR:", err);
         }
       });
 
-      // Handle AR session status
+      // Khi AR session bắt đầu
       mv.addEventListener("ar-status", (event) => {
         if (event.detail.status === "session-started") {
-          bgm.currentTime = 0;
-          bgm.play().catch((err) => console.log("Không phát được nhạc:", err));
+          console.log("AR session started");
           arInfo.classList.add("show");
-          mv.setAttribute("ar-status", "session-started");
-          arInfoText.textContent =
-            "Object locked to your view — move camera, it stays fixed!";
-          setTimeout(() => {
-            arInfo.classList.remove("show");
-          }, 5000);
-        } else if (event.detail.status === "not-presenting") {
-          bgm.pause();
-          bgm.currentTime = 0;
-          arInfo.classList.remove("show");
-          mv.removeAttribute("ar-status");
-        }
-      });
 
-      // Handle model load
-      mv.addEventListener("load", () => {
-        const animations = mv.availableAnimations;
-        if (animations && animations.length > 0) {
-          mv.animationName = animations[0];
-          mv.animationLoop = false;
-          mv.play();
+          // Lặp theo mỗi frame AR để giữ mô hình trước camera
+          const session = mv.xrSession;
+          const refSpace = mv.xrReferenceSpace;
+          const viewerSpace = session.requestReferenceSpace
+            ? "viewer"
+            : refSpace;
 
-          const lockAtEnd = () => {
-            if (mv.duration && mv.currentTime >= mv.duration - 0.1) {
-              mv.timeScale = 0.0;
-              btnGroup.classList.add("show");
-            } else {
-              requestAnimationFrame(lockAtEnd);
+          session.requestAnimationFrame(function updateFrame(t, frame) {
+            // Lấy pose của camera (viewer)
+            const pose = frame.getViewerPose(refSpace || viewerSpace);
+            if (pose) {
+              const pos = pose.transform.position;
+              const orientation = pose.transform.orientation;
+
+              // Đặt mô hình cách camera 0.5m phía trước
+              mv.setAttribute(
+                "data-position",
+                `0 0 -0.5m`
+              );
+              mv.setAttribute("data-rotation", "0 0 0");
             }
-          };
-          requestAnimationFrame(lockAtEnd);
-        } else {
-          setTimeout(() => btnGroup.classList.add("show"), 1000);
+            // Tiếp tục cập nhật mỗi frame
+            session.requestAnimationFrame(updateFrame);
+          });
+        } else if (event.detail.status === "not-presenting") {
+          arInfo.classList.remove("show");
         }
       });
     </script>
