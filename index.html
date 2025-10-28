@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>3D UI Autoplay Animation</title>
+    <title>3D UI Autoplay + Scale Control</title>
     <script
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
     ></script>
+
     <style>
       body,
       html {
@@ -39,13 +40,21 @@
         background: transparent;
       }
 
-      /* Slider for scaling */
-      input[type="range"] {
+      /* Slider UI */
+      #scaleControl {
         position: fixed;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 2;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 10px 20px;
+        border-radius: 12px;
+        color: white;
+        font-family: sans-serif;
+      }
+
+      #scaleControl input {
         width: 200px;
       }
     </style>
@@ -55,25 +64,27 @@
     <!-- Camera background -->
     <video id="camera" autoplay muted playsinline></video>
 
-    <!-- 3D model always on screen -->
+    <!-- 3D model -->
     <model-viewer
       id="obj"
       src="embe5.glb"
       ios-src="embe5.usdz"
       camera-controls
-      auto-rotate
       autoplay
       interaction-prompt="none"
       shadow-intensity="1"
       exposure="1"
-      scale="0.5 0.5 0.5"
     ></model-viewer>
 
-    <!-- Optional: slider to control model scale -->
-    <input id="scaleSlider" type="range" min="0.1" max="3" step="0.1" value="1" />
+    <!-- Scale control -->
+    <div id="scaleControl">
+      <label for="scaleRange">Scale:</label>
+      <input type="range" id="scaleRange" min="0.1" max="2" step="0.1" value="1" />
+      <span id="scaleValue">1.0x</span>
+    </div>
 
     <script>
-      // Use real camera for background
+      // Enable camera background
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
         .then((stream) => {
@@ -82,21 +93,26 @@
         .catch((err) => console.error("Camera access error:", err));
 
       const mv = document.getElementById("obj");
+      const scaleRange = document.getElementById("scaleRange");
+      const scaleValue = document.getElementById("scaleValue");
 
-      // Ensure animation starts automatically after loading
+      // Play model animation when ready
       mv.addEventListener("load", () => {
         if (mv.availableAnimations && mv.availableAnimations.length > 0) {
           mv.play({ animationName: mv.availableAnimations[0] });
         } else {
           console.warn("No animation found in model.");
         }
-      });
 
-      // Scale control
-      const slider = document.getElementById("scaleSlider");
-      slider.addEventListener("input", (e) => {
-        const s = e.target.value;
-        mv.scale = `${s} ${s} ${s}`;
+        // Allow scaling the 3D model
+        const model = mv.model;
+        if (model) {
+          scaleRange.addEventListener("input", () => {
+            const s = parseFloat(scaleRange.value);
+            model.scale.set(s, s, s);
+            scaleValue.textContent = s.toFixed(1) + "x";
+          });
+        }
       });
     </script>
   </body>
