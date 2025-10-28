@@ -4,16 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>3D UI Autoplay Animation</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script
+      type="module"
+      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
+    ></script>
     <style>
-      html, body {
+      html,
+      body {
         margin: 0;
         overflow: hidden;
         background: #000;
         height: 100%;
       }
 
-      /* Nền camera */
       video#camera {
         position: fixed;
         top: 0;
@@ -24,7 +27,6 @@
         z-index: 0;
       }
 
-      /* Model 3D */
       model-viewer {
         position: fixed;
         top: 50%;
@@ -36,7 +38,6 @@
         z-index: 1;
       }
 
-      /* Hiệu ứng mờ dần khi model và âm thanh sẵn sàng */
       #fadeCover {
         position: fixed;
         inset: 0;
@@ -49,14 +50,31 @@
         opacity: 0;
         pointer-events: none;
       }
+
+      /* Overlay yêu cầu click cho iOS */
+      #iosTap {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-family: sans-serif;
+        z-index: 3;
+        transition: opacity 0.6s ease;
+      }
+      #iosTap.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
     </style>
   </head>
 
   <body>
-    <!-- Camera nền -->
     <video id="camera" autoplay muted playsinline></video>
 
-    <!-- Model 3D -->
     <model-viewer
       id="obj"
       src="embe5.glb"
@@ -70,57 +88,67 @@
       touch-action="pan-y"
     ></model-viewer>
 
-    <!-- Âm thanh nền (tự động, muted rồi unmute sau) -->
     <audio id="bgm" src="voice_embe5.MP3" preload="auto" loop muted></audio>
 
-    <!-- Hiệu ứng fade đen -->
     <div id="fadeCover"></div>
+
+    <!-- Overlay click cho iOS -->
+    <div id="iosTap">👆 Nhấn để bắt đầu</div>
 
     <script>
       const cameraVideo = document.getElementById("camera");
       const mv = document.getElementById("obj");
       const bgm = document.getElementById("bgm");
       const fadeCover = document.getElementById("fadeCover");
+      const iosTap = document.getElementById("iosTap");
 
-      // Mở camera thật (background)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      // Bật camera
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "environment" } })
         .then((stream) => (cameraVideo.srcObject = stream))
         .catch((err) => console.error("Lỗi camera:", err));
 
-      // Khi model load → phát animation
       mv.addEventListener("load", () => {
         if (mv.availableAnimations?.length > 0) {
           mv.play({ animationName: mv.availableAnimations[0] });
         }
-                // Handle background music for iOS
-        if (isIOS && bgm.paused) {
-          bgm.currentTime = 0;
-          bgm
-            .play()
-            .catch((err) => console.log("Không phát được nhạc trên iOS:", err));
+
+        if (!isIOS) {
+          // Android/PC: phát nhạc luôn
+          bgm.play()
+            .then(() => {
+              setTimeout(() => {
+                bgm.muted = false;
+                bgm.volume = 1.0;
+                fadeCover.classList.add("hidden");
+              }, 500);
+            })
+            .catch(() => fadeCover.classList.add("hidden"));
+        } else {
+          // iOS: yêu cầu người dùng chạm
+          fadeCover.classList.add("hidden");
+          iosTap.classList.remove("hidden");
         }
-        
       });
 
-      // Phát nhạc autoplay (Android/PC chắc chắn OK, iOS có thể bị muted ban đầu)
-      bgm.play()
-        .then(() => {
-          console.log("Autoplay OK (muted)");
-          // Sau 0.5s thử bật tiếng
-          setTimeout(() => {
-            bgm.muted = false;
-            bgm.volume = 1.0;
-            console.log("Đã bật tiếng (nếu iOS cho phép)");
-            fadeCover.classList.add("hidden");
-          }, 500);
-        })
-        .catch((err) => {
-          console.log("Autoplay bị chặn:", err);
-          fadeCover.classList.add("hidden");
-        });
+      // Khi người dùng chạm vào iOS overlay
+      iosTap.addEventListener("click", () => {
+        bgm.muted = false;
+        bgm.volume = 1.0;
+        bgm
+          .play()
+          .then(() => {
+            console.log("iOS: phát nhạc thành công");
+            iosTap.classList.add("hidden");
+          })
+          .catch((err) => {
+            console.warn("Không thể phát nhạc:", err);
+          });
+      });
 
-      // Trong một số trường hợp iOS resume audio context sau tab switch
+      // Resume audio khi trở lại tab
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) {
           bgm.muted = false;
@@ -130,4 +158,3 @@
     </script>
   </body>
 </html>
-
