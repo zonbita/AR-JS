@@ -6,13 +6,11 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>AR Fixed Object</title>
-
+    <title>AR Demo</title>
     <script
       type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
     ></script>
-
     <style>
       html,
       body {
@@ -20,142 +18,191 @@
         height: 100%;
         background: #0b0c10;
         color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
         overflow: hidden;
       }
-
       model-viewer {
         width: 100%;
         height: 100%;
         --ar-button-display: none;
         background: #0b0c10;
       }
-
       .button-group {
         position: absolute;
         bottom: 30px;
         left: 50%;
-        transform: translateX(-50%) translateY(30px);
+        transform: translateX(-50%) translateY(30px); /* bay lên từ dưới */
         display: flex;
         gap: 16px;
         z-index: 10;
+
+        /* Ban đầu ẩn */
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.8s ease, transform 0.8s ease;
       }
-
       .button-group.show {
         opacity: 1;
         pointer-events: auto;
         transform: translateX(-50%) translateY(0);
       }
-
+      .button-group button {
+        flex: 1;
+        width: 160px;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        transition: transform 0.2s ease, filter 0.25s ease, box-shadow 0.2s ease;
+        will-change: transform, filter, box-shadow;
+        backdrop-filter: blur(12px);
+      }
+      .button-group button:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.1);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+      }
+      .button-group button:active {
+        transform: scale(0.95);
+      }
       .ar-btn {
         background: linear-gradient(135deg, #ffd700, #ff8c00);
         color: #1a1a1a;
-        border: none;
-        border-radius: 12px;
-        padding: 12px 20px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
       }
-
-      .ar-info {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 15px;
-        border-radius: 12px;
-        font-size: 14px;
-        backdrop-filter: blur(10px);
-        z-index: 100;
-        display: none;
+      .link-btn {
+        background: linear-gradient(135deg, #ff3b3b, #d81b60);
+        color: #fff;
       }
-
-      .ar-info.show {
-        display: block;
+      .btn-icon {
+        font-size: 20px;
+        transform: translateY(1px);
       }
     </style>
   </head>
-
   <body>
-    <div class="ar-info" id="arInfo">
-      <strong>🎯 AR Mode Active!</strong><br />
-      <span id="arInfoText">
-        Object is fixed in front of your camera — move around, it stays in view.
-      </span>
-    </div>
-
     <model-viewer
       id="mv"
-      src="1M.glb"
-      ios-src="1M.usdz"
+      src="module/source/1M.glb"
+      ios-src="module/source/1M.usdz"
       ar
+      autoplay
       ar-modes="webxr quick-look"
       ar-scale="auto"
+      ar-placement="floor"
+      alt="BABY1M"
+      scale="0.5 0.5 0.5"
       camera-controls
-      autoplay
-      alt="Fixed AR Object"
-      style="width: 100%; height: 100%;"
+      interaction-prompt="none"
     >
     </model-viewer>
 
-    <div class="button-group show">
-      <button class="ar-btn" id="customAR">🕶️ Xem AR</button>
+    <div class="button-group" id="btnGroup">
+      <button class="ar-btn" id="customAR">
+        <span class="btn-icon">🕶️</span> Xem AR
+      </button>
+      <button
+        class="link-btn"
+        onclick="window.open('https://store.epicgames.com/vi', '_blank')"
+      >
+        <span class="btn-icon">▶️</span> Ghé Thăm
+      </button>
     </div>
+
+    <audio id="bgm" src="music/Sound-InPlace.MP3" preload="auto" loop></audio>
 
     <script>
       const mv = document.getElementById("mv");
       const customAR = document.getElementById("customAR");
-      const arInfo = document.getElementById("arInfo");
+      const bgm = document.getElementById("bgm");
+      const btnGroup = document.getElementById("btnGroup");
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-      // Khi người dùng bấm nút AR
-      customAR.addEventListener("click", async () => {
+      // Nút kích hoạt AR
+      customAR.addEventListener("click", async (event) => {
+        event.preventDefault();
         try {
           await mv.activateAR();
         } catch (err) {
-          console.log("Không thể kích hoạt AR:", err);
+          console.log("Kích hoạt AR thất bại:", err);
         }
       });
 
-      // Khi AR session bắt đầu
-      mv.addEventListener("ar-status", (event) => {
-        if (event.detail.status === "session-started") {
-          console.log("AR session started");
-          arInfo.classList.add("show");
+      renderer.domElement.addEventListener("touchmove", (event) => {
+        const touch = event.touches[0];
+        const x = (touch.clientX / window.innerWidth) * 2 - 1;
+        const y = -(touch.clientY / window.innerHeight) * 2 + 1;
 
-          // Lặp theo mỗi frame AR để giữ mô hình trước camera
-          const session = mv.xrSession;
-          const refSpace = mv.xrReferenceSpace;
-          const viewerSpace = session.requestReferenceSpace
-            ? "viewer"
-            : refSpace;
+        // Raycast từ màn hình vào AR scene
+        raycaster.setFromCamera({ x, y }, camera);
+        const intersects = raycaster.intersectObject(floorPlane);
 
-          session.requestAnimationFrame(function updateFrame(t, frame) {
-            // Lấy pose của camera (viewer)
-            const pose = frame.getViewerPose(refSpace || viewerSpace);
-            if (pose) {
-              const pos = pose.transform.position;
-              const orientation = pose.transform.orientation;
-
-              // Đặt mô hình cách camera 0.5m phía trước
-              mv.setAttribute(
-                "data-position",
-                `0 0 -0.5m`
-              );
-              mv.setAttribute("data-rotation", "0 0 0");
-            }
-            // Tiếp tục cập nhật mỗi frame
-            session.requestAnimationFrame(updateFrame);
-          });
-        } else if (event.detail.status === "not-presenting") {
-          arInfo.classList.remove("show");
+        if (intersects.length > 0) {
+          model.position.copy(intersects[0].point); // di chuyển model tới chỗ chạm
         }
+      });
+
+      // Xử lý iOS
+      if (isIOS) {
+        customAR.addEventListener("click", () => {
+          if (bgm.paused) {
+            bgm.currentTime = 0;
+            bgm
+              .play()
+              .catch((err) =>
+                console.log("Không phát được nhạc trên iOS:", err)
+              );
+          }
+        });
+
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            bgm.pause();
+            bgm.currentTime = 0;
+          }
+        });
+      } else {
+        // Android & WebXR
+        mv.addEventListener("ar-status", (event) => {
+          if (event.detail.status === "session-started") {
+            bgm.currentTime = 0;
+            bgm
+              .play()
+              .catch((err) => console.log("Không phát được nhạc:", err));
+          } else if (event.detail.status === "not-presenting") {
+            bgm.pause();
+            bgm.currentTime = 0;
+          }
+        });
+      }
+
+      window.addEventListener("pagehide", () => {
+        bgm.pause();
+        bgm.currentTime = 0;
+      });
+
+      mv.addEventListener("load", () => {
+        const animations = mv.availableAnimations;
+        if (animations && animations.length > 0) {
+          mv.animationName = animations[0];
+          mv.play();
+        }
+      });
+
+      mv.addEventListener("finished", () => {
+        btnGroup.classList.add("show");
+        mv.pause();
+
+        setTimeout(() => {
+          btnGroup.classList.add("show");
+        }, 10000);
       });
     </script>
   </body>
