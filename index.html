@@ -4,9 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>3D UI Autoplay Animation</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script
+      type="module"
+      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
+    ></script>
     <style>
-      body, html {
+      body,
+      html {
         margin: 0;
         overflow: hidden;
         background: #000;
@@ -34,6 +38,16 @@
         z-index: 1;
         background: transparent;
       }
+
+      /* Slider for scaling */
+      input[type="range"] {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        width: 200px;
+      }
     </style>
   </head>
 
@@ -52,7 +66,11 @@
       interaction-prompt="none"
       shadow-intensity="1"
       exposure="1"
+      scale="0.5 0.5 0.5"
     ></model-viewer>
+
+    <!-- Optional: slider to control model scale -->
+    <input id="scaleSlider" type="range" min="0.1" max="3" step="0.1" value="1" />
 
     <script>
       // Use real camera for background
@@ -68,14 +86,18 @@
       // Ensure animation starts automatically after loading
       mv.addEventListener("load", () => {
         if (mv.availableAnimations && mv.availableAnimations.length > 0) {
-          // Play the first animation automatically
           mv.play({ animationName: mv.availableAnimations[0] });
         } else {
           console.warn("No animation found in model.");
         }
       });
+
+      // Scale control
+      const slider = document.getElementById("scaleSlider");
+      slider.addEventListener("input", (e) => {
+        const s = e.target.value;
+        mv.scale = `${s} ${s} ${s}`;
+      });
     </script>
   </body>
 </html>
-
-
