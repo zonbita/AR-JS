@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test AR Months</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f0f0f0;
+      }
+      .test-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .month-link {
+        display: inline-block;
+        margin: 10px;
+        padding: 15px 25px;
+        background: linear-gradient(135deg, #ff8a95, #ffb74d);
+        color: white;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: bold;
+        transition: transform 0.3s ease;
+      }
+      .month-link:hover {
+        transform: translateY(-2px);
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      .instructions {
+        background: #e8f4fd;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <h1>Test AR Months</h1>
+
+      <div class="instructions">
+        <h3>Hướng dẫn test:</h3>
+        <p>
+          Click vào các link bên dưới để test các tháng khác nhau. Mỗi link sẽ
+          mở AR page với tháng tương ứng.
+        </p>
+      </div>
+
+      <div style="text-align: center">
+        <a href="index.html?month=1" class="month-link">Tháng 1</a>
+        <a href="index.html?month=2" class="month-link">Tháng 2</a>
+        <a href="index.html?month=3" class="month-link">Tháng 3</a>
+        <a href="index.html?month=4" class="month-link">Tháng 4</a>
+        <a href="index.html?month=5" class="month-link">Tháng 5</a>
+        <a href="index.html?month=6" class="month-link">Tháng 6</a>
+        <a href="index.html?month=7" class="month-link">Tháng 7</a>
+        <a href="index.html?month=8" class="month-link">Tháng 8</a>
+        <a href="index.html?month=9" class="month-link">Tháng 9</a>
+      </div>
+
+      <div
+        style="
+          margin-top: 30px;
+          padding: 15px;
+          background: #f8f9fa;
+          border-radius: 5px;
+        "
+      >
+        <h3>URL Format cho Landing Page:</h3>
+        <p><code>index.html?month=X</code> (với X là số tháng từ 1-9)</p>
+        <p><strong>Ví dụ:</strong></p>
+        <ul>
+          <li><code>index.html?month=1</code> - Tháng 1</li>
+          <li><code>index.html?month=5</code> - Tháng 5</li>
+          <li><code>index.html</code> - Mặc định tháng 1</li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>

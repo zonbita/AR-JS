@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  frontend:
+    image: nginx:alpine
+    container_name: ar-mhd
+    ports:
+      - "5022:80"
+    volumes:
+      # Mount toàn bộ thư mục hiện tại (chứa index.html, css/, js/, textures/)
+      - ./:/usr/share/nginx/html
+      # Mount file cấu hình nginx
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    restart: unless-stopped
